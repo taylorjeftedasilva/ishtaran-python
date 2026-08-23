@@ -8,7 +8,7 @@ from ..model.workflow import EventIngestionResult, map_event_ingestion_result
 
 
 class EventsResource(ResourceSupport):
-    """Data Plane -- Events (1 rota real: ingestao, mesmo modulo WorkflowRules)."""
+    """Data Plane -- Events (1 real route: ingestion, same WorkflowRules module)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)

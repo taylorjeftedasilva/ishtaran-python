@@ -1,9 +1,9 @@
 """
-Verificacao real de assinatura de webhook -- algoritmo extraido byte a byte de
-WebhookSignatureCalculator.cs/HttpWebhookDeliveryPort.cs (ver SDK_CAPABILITY_SPEC.md secao 10):
+Real webhook signature verification -- algorithm extracted byte-for-byte from
+WebhookSignatureCalculator.cs/HttpWebhookDeliveryPort.cs (see SDK_CAPABILITY_SPEC.md section 10):
 signed_content = "{unix_timestamp}.{raw_body_json}",
-signature = lowercase_hex(HMAC_SHA256(secret, signed_content)). Usa o raw_body exatamente como
-recebido -- nunca reserializa o JSON antes de calcular.
+signature = lowercase_hex(HMAC_SHA256(secret, signed_content)). Uses raw_body exactly as
+received -- never re-serializes the JSON before computing.
 """
 
 from __future__ import annotations

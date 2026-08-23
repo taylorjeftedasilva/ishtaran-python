@@ -1,10 +1,10 @@
 """
-Fabrica generica de enum forward-compatible -- ver SDK_CAPABILITY_SPEC.md secao 11.4. Um valor
-bruto desconhecido nunca lanca: vira EnumValue(name='UNKNOWN', raw_value=raw) preservando o valor
-exato recebido (inteiro ou string, conforme o Grupo do enum real -- ver secao 11.3).
+Generic forward-compatible enum factory -- see SDK_CAPABILITY_SPEC.md section 11.4. An unknown
+raw value never raises: it becomes EnumValue(name='UNKNOWN', raw_value=raw), preserving the exact
+value received (integer or string, depending on the real enum's Group -- see section 11.3).
 
-Deliberadamente NAO usa enum.Enum/IntEnum da stdlib: ambos lancam ValueError para um valor
-desconhecido por padrao, o oposto do comportamento forward-compatible exigido pelo brief.
+Deliberately does NOT use the stdlib's enum.Enum/IntEnum: both raise ValueError for an unknown
+value by default, the opposite of the forward-compatible behavior required by the brief.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class EnumValue(Generic[TRaw]):
 
 
 class EnumRegistry(Generic[TRaw]):
-    """Instancia retornada por create_enum -- acesso por atributo (STATUS.COMPLETED) + from_raw()."""
+    """Instance returned by create_enum -- attribute access (STATUS.COMPLETED) + from_raw()."""
 
     def __init__(self, members: dict[str, TRaw]) -> None:
         self._by_raw: dict[TRaw, EnumValue[TRaw]] = {}

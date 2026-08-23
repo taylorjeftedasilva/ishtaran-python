@@ -22,7 +22,7 @@ from ..model.workflow import (
 
 
 class WorkflowsResource(ResourceSupport):
-    """Data Plane -- WorkflowRules (7 rotas de Workflow/Version/Rule; Events/EventTypes em recursos proprios)."""
+    """Data Plane -- WorkflowRules (7 Workflow/Version/Rule routes; Events/EventTypes have their own resources)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -30,9 +30,9 @@ class WorkflowsResource(ResourceSupport):
     def create(self, organization_id: str, name: str) -> CreateWorkflowResult:
         return self._execute(post_request(f"/v1/organizations/{organization_id}/workflows", self._to_json({"name": name}), False), map_create_workflow_result)
 
-    # Retorno anotado com typing.List (nao list[...]) -- dentro desta classe, o metodo `list`
-    # abaixo shadowaria o builtin `list` em qualquer anotacao subsequente no corpo da classe
-    # (bug real encontrado via mypy, nao apenas estilo).
+    # Return annotated with typing.List (not list[...]) -- inside this class, the `list` method
+    # below would shadow the `list` builtin in any subsequent annotation in the class body
+    # (a real bug found via mypy, not just style).
     def list(self, organization_id: str) -> List[WorkflowResponse]:
         return self._execute_list(get_request(f"/v1/organizations/{organization_id}/workflows"), map_workflow_response)
 

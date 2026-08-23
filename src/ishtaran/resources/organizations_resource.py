@@ -15,9 +15,9 @@ from ..model.control_plane import (
 
 class OrganizationsResource(ResourceSupport):
     """
-    Control Plane -- Organizations (6 rotas reais). Sempre Member JWT. create/create_application
-    usam idempotencia via HEADER Idempotency-Key -- diferente do padrao de campo de corpo dos
-    modulos financeiros (ver SDK_CAPABILITY_SPEC.md secao 9).
+    Control Plane -- Organizations (6 real routes). Always Member JWT. create/create_application
+    use idempotency via the Idempotency-Key HEADER -- unlike the body-field pattern of the
+    financial modules (see SDK_CAPABILITY_SPEC.md section 9).
     """
 
     def __init__(self, transport: HttpTransport) -> None:

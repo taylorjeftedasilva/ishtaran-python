@@ -11,23 +11,22 @@ from ..util.json_util import array_field, field, money, string_field, string_fie
 
 @dataclass(frozen=True)
 class AccountResponse:
+    """DEC-032 -- an Account no longer belongs to a single Organization directly (global
+    identity, linked to N Organizations via Relationship). For the Organization-scoped link,
+    see OrganizationAccountResponse (model/account_holders.py), returned by accounts.list()."""
+
     account_id: str
-    organization_id: str
-    external_id: str | None
+    account_holder_id: str
     status: str | None
     created_at: str
-    authorized_application_ids: list[str] | None
 
 
 def map_account_response(raw: Any) -> AccountResponse:
-    ids = field(raw, "authorizedApplicationIds")
     return AccountResponse(
         account_id=string_field(raw, "accountId"),
-        organization_id=string_field(raw, "organizationId"),
-        external_id=string_field_or_none(raw, "externalId"),
+        account_holder_id=string_field(raw, "accountHolderId"),
         status=string_field_or_none(raw, "status"),
         created_at=string_field(raw, "createdAt"),
-        authorized_application_ids=None if ids is None else [str(x) for x in ids],
     )
 
 

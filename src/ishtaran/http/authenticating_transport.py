@@ -1,6 +1,6 @@
 """
-Anexa X-Api-Key (quando configurado) e/ou Authorization: Bearer (quando um login de Member ja
-ocorreu nesta instancia de client) -- nunca os dois disfarcados um do outro (regra do brief).
+Attaches X-Api-Key (when configured) and/or Authorization: Bearer (when a Member login has
+already happened on this client instance) -- never the two disguised as each other (rule from the brief).
 """
 
 from __future__ import annotations

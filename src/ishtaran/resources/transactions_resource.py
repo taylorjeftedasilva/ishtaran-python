@@ -26,7 +26,7 @@ _TERMINAL_STATUSES = {
 
 
 class TransactionsResource(ResourceSupport):
-    """Data Plane -- Transactions (7 rotas reais)."""
+    """Data Plane -- Transactions (7 real routes)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -76,7 +76,7 @@ class TransactionsResource(ResourceSupport):
         self._execute_no_content(post_request(f"/v1/transactions/{transaction_id}/unfreeze", None, False))
 
     def wait_for(self, transaction_id: str, timeout_seconds: float, poll_interval_seconds: float) -> TransactionResponse:
-        """Polling seguro, nunca infinito -- termina em Settled/Refunded/Cancelled."""
+        """Safe polling, never infinite -- terminates at Settled/Refunded/Cancelled."""
         return poll_until(
             lambda: self.get(transaction_id),
             lambda r: r.status.raw_value in _TERMINAL_STATUSES,

@@ -1,4 +1,4 @@
-"""Guarda o access token de Member (apos auth.login(...)) -- mutavel dentro de uma instancia de IshtaranClient."""
+"""Holds the Member access token (after auth.login(...)) -- mutable within an IshtaranClient instance."""
 
 from __future__ import annotations
 

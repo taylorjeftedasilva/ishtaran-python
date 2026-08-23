@@ -11,7 +11,7 @@ from ..model.control_plane import (
 
 
 class EnvironmentsResource(ResourceSupport):
-    """Control Plane -- Environments (2 rotas reais -- sem rota real de get/list de Environment em si)."""
+    """Control Plane -- Environments (2 real routes -- no real get/list route for Environment itself)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -20,5 +20,5 @@ class EnvironmentsResource(ResourceSupport):
         return self._execute_list(get_request(f"/v1/environments/{environment_id}/api-keys"), map_api_key_metadata_response)
 
     def generate_api_key(self, environment_id: str) -> GenerateApiKeyResult:
-        """plain_text_key so aparece nesta resposta -- nunca recuperavel depois."""
+        """plain_text_key only appears in this response -- never retrievable afterward."""
         return self._execute(post_request(f"/v1/environments/{environment_id}/api-keys", "{}", False), map_generate_api_key_result)

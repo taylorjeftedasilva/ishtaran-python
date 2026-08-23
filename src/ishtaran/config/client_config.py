@@ -1,6 +1,6 @@
 """
-Fabrica unica de configuracao -- fonte de verdade de defaults (base_url/api_key/timeout/
-environment/user_agent/retry_policy), nunca dispersa entre resources individuais.
+Single configuration factory -- source of truth for defaults (base_url/api_key/timeout/
+environment/user_agent/retry_policy), never scattered across individual resources.
 """
 
 from __future__ import annotations
@@ -50,8 +50,8 @@ def build_client_config(
 
     if allow_insecure_tls_for_local_development and environment != Environment.LOCAL:
         raise ValueError(
-            "allow_insecure_tls_for_local_development so pode ser usado com Environment.LOCAL -- "
-            "nunca contra Sandbox/Production."
+            "allow_insecure_tls_for_local_development can only be used with Environment.LOCAL -- "
+            "never against Sandbox/Production."
         )
 
     return IshtaranClientConfig(

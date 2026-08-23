@@ -109,7 +109,7 @@ def test_get_balance_is_direct_pass_through() -> None:
 
 
 def test_verify_webhook_signature_makes_no_http_call() -> None:
-    fake = FakeHttpTransport()  # nenhuma resposta enfileirada -- lancaria se fosse chamado
+    fake = FakeHttpTransport()  # no response queued -- would raise if it were called
     client = IshtaranClient.for_testing(fake)
 
     valid = client.verify_webhook_signature("{}", "deadbeef", str(int(time.time())), "secret")

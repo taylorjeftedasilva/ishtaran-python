@@ -1,4 +1,4 @@
-"""06 -- Liquidar uma Transaction financiada (Settlement) e consultar o resumo."""
+"""06 -- Settle a funded Transaction (Settlement) and query the summary."""
 
 import os
 

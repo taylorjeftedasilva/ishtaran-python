@@ -1,4 +1,4 @@
-"""04 -- Criar uma Transaction via Core API, com controle granular dos participantes."""
+"""04 -- Create a Transaction via the Core API, with granular control over participants."""
 
 import os
 from decimal import Decimal

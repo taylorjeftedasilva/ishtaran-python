@@ -1,7 +1,8 @@
 """
-Cobre o achado real desta sessao: json.dumps padrao nao tem como emitir Decimal como numero JSON
-bruto (sempre o quotaria como string via default=str, o que a API real, esperando number/double,
-rejeitaria). ResourceSupport._to_json usa um serializador proprio para evitar isso.
+Covers a real finding from this session: the standard json.dumps has no way to emit a Decimal as
+a raw JSON number (it would always quote it as a string via default=str, which the real API,
+expecting number/double, would reject). ResourceSupport._to_json uses its own serializer to
+avoid this.
 """
 
 import json
@@ -24,7 +25,7 @@ def test_decimal_serializes_as_raw_json_number_never_quoted_string() -> None:
 
     parsed = json.loads(encoded)
     assert isinstance(parsed["amount"], float) or "100.123456789012345678" in encoded
-    # A prova real: o texto bruto contem o numero sem aspas, exatamente como enviado.
+    # The real proof: the raw text contains the number unquoted, exactly as sent.
     assert '"amount": 100.123456789012345678' in encoded
     assert '"amount": "100.123456789012345678"' not in encoded
 

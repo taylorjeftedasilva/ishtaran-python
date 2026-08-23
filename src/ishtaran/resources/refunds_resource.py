@@ -9,7 +9,7 @@ from ..model.settlement import ExecuteRefundResult, RefundResponse, map_execute_
 
 
 class RefundsResource(ResourceSupport):
-    """Data Plane -- Refunds (3 rotas reais, sob o mesmo modulo real Settlement)."""
+    """Data Plane -- Refunds (3 real routes, under the same real Settlement module)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -17,7 +17,7 @@ class RefundsResource(ResourceSupport):
     def execute_refund(
         self, transaction_id: str, amount: Decimal | None = None, reason: str | None = None, idempotency_key: str | None = None,
     ) -> ExecuteRefundResult:
-        """amount None = reembolso total."""
+        """amount None = full refund."""
         body = self._to_json({"amount": amount, "reason": reason, "idempotencyKey": resolve_idempotency_key(idempotency_key)})
         return self._execute(post_request(f"/v1/transactions/{transaction_id}/refunds", body, True), map_execute_refund_result)
 

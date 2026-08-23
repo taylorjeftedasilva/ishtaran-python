@@ -11,7 +11,7 @@ from ..pagination.page_iterator import paginate
 
 
 class LedgerResource(ResourceSupport):
-    """Data Plane -- Ledger (2 rotas reais, ambas leitura)."""
+    """Data Plane -- Ledger (2 real routes, both read-only)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -31,8 +31,8 @@ class LedgerResource(ResourceSupport):
         date_to: str | None = None,
     ) -> list[LedgerEntryResponse]:
         """
-        skip/take sao paginacao real (ver SDK_CAPABILITY_SPEC.md secao 12.7). Todo valor de query
-        passa por urlencode -- nunca concatenado cru (ver SECURITY_REVIEW.md).
+        skip/take are real pagination (see SDK_CAPABILITY_SPEC.md section 12.7). Every query value
+        goes through urlencode -- never concatenated raw (see SECURITY_REVIEW.md).
         """
         params: dict[str, str] = {"assetNetworkId": asset_network_id, "skip": str(skip), "take": str(take)}
         if nature is not None:
@@ -52,5 +52,5 @@ class LedgerResource(ResourceSupport):
         date_from: str | None = None,
         date_to: str | None = None,
     ) -> Iterator[LedgerEntryResponse]:
-        """Iterador lazy (generator) -- ver SDK_CAPABILITY_SPEC.md secao 12.7."""
+        """Lazy iterator (generator) -- see SDK_CAPABILITY_SPEC.md section 12.7."""
         return paginate(page_size, lambda skip, take: self.list_entries(account_id, asset_network_id, skip, take, nature, date_from, date_to))

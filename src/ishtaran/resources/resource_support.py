@@ -1,6 +1,6 @@
 """
-Base comum de todo resource -- execucao de request + parsing lossless + mapeamento de erro
-centralizados, para nenhum resource duplicar essa logica.
+Common base for every resource -- request execution + lossless parsing + error mapping
+centralized, so no resource duplicates this logic.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ class ResourceSupport:
             return []
         raw = parse_lossless(response.body)
         if not isinstance(raw, list):
-            raise ValueError("Resposta esperada como lista, recebido outro formato")
+            raise ValueError("Expected response as a list, received a different format")
         return [mapper(item) for item in raw]
 
     def _execute_no_content(self, request: IshtaranHttpRequest) -> None:
@@ -47,10 +47,10 @@ class ResourceSupport:
 
     def _to_json(self, value: Any) -> str:
         """
-        Serializador proprio minimo -- necessario porque json.dumps padrao nao tem como emitir
-        Decimal como numero JSON bruto (sempre o quotaria como string via `default=`, o que a API
-        real, esperando number/double, rejeitaria). Nunca passa Decimal por float (perderia
-        precisao) -- emite o texto exato via str(Decimal), sem aspas, diretamente no stream.
+        Minimal custom serializer -- necessary because standard json.dumps has no way to emit
+        Decimal as a raw JSON number (it would always quote it as a string via `default=`, which
+        the real API, expecting number/double, would reject). Never routes Decimal through float
+        (would lose precision) -- emits the exact text via str(Decimal), unquoted, directly to the stream.
         """
         return _encode(value)
 
@@ -73,4 +73,4 @@ def _encode(value: Any) -> str:
         return "{" + items + "}"
     if isinstance(value, (list, tuple)):
         return "[" + ", ".join(_encode(item) for item in value) + "]"
-    raise TypeError(f"Tipo nao serializavel para JSON: {type(value)}")
+    raise TypeError(f"Type not JSON-serializable: {type(value)}")

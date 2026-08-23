@@ -1,4 +1,4 @@
-"""Transporte em memoria, sem rede -- usado por todo teste de resources/retry/erro."""
+"""In-memory transport, no network -- used by every resources/retry/error test."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ class FakeHttpTransport:
             return self._queued.popleft()(request)
         if self._default:
             return self._default(request)
-        raise RuntimeError("Nenhuma resposta configurada em FakeHttpTransport")
+        raise RuntimeError("No response configured on FakeHttpTransport")
 
     @property
     def request_count(self) -> int:

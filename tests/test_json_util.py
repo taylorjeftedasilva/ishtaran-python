@@ -14,8 +14,8 @@ def test_preserves_exact_precision_from_json_number_token() -> None:
 
 
 def test_confirms_native_float_would_have_lost_this_precision() -> None:
-    # Prova que o problema e real, nao hipotetico -- json.loads padrao (sem parse_float=Decimal)
-    # converteria para float e perderia digitos.
+    # Proves the problem is real, not hypothetical -- the standard json.loads (without
+    # parse_float=Decimal) would convert to float and lose digits.
     lossy = float("100.123456789012345678")
     assert str(lossy) != "100.123456789012345678"
 
@@ -27,15 +27,15 @@ def test_safe_int_extracts_small_integers_as_real_int() -> None:
 
 
 def test_matches_real_backend_small_payment_example() -> None:
-    # Mesmo cenario do teste de backend ExecuteSettlement_SmallPayment_NoFloor (0,9% sem piso).
+    # Same scenario as the backend test ExecuteSettlement_SmallPayment_NoFloor (0.9%, no floor).
     raw = parse_lossless('{"grossAmount": 1, "platformFeeAmount": 0.009, "distributableAmount": 0.991}')
     assert money(field(raw, "platformFeeAmount")) == Decimal("0.009")
     assert money(field(raw, "distributableAmount")) == Decimal("0.991")
 
 
 def test_int_valued_money_field_still_becomes_decimal_never_int() -> None:
-    # amount sem parte fracionaria (ex.: 100, sem ".0") ainda deve virar Decimal consistente,
-    # nunca int -- parse_int=Decimal cobre exatamente esse caso.
+    # amount with no fractional part (e.g. 100, no ".0") must still become a consistent Decimal,
+    # never an int -- parse_int=Decimal covers exactly this case.
     raw = parse_lossless('{"amount": 100}')
     value = money(field(raw, "amount"))
     assert isinstance(value, Decimal)

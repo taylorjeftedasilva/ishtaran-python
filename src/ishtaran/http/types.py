@@ -1,6 +1,6 @@
 """
-Tipos de requisicao/resposta internos, independentes de biblioteca de transporte -- nunca vaza
-httpx na superficie publica, permitindo testar resources/* com um HttpTransport falso, sem rede.
+Internal request/response types, independent of any transport library -- never leaks httpx into
+the public surface, allowing resources/* to be tested with a fake HttpTransport, no network.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ class IshtaranHttpRequest:
     path: str
     headers: dict[str, str] = field(default_factory=dict)
     body: str | None = None
-    # Chamadas com Idempotency-Key (ou GET, naturalmente idempotente) podem ter 5xx retried com
-    # seguranca (secao 8 do Capability Spec).
+    # Calls with an Idempotency-Key (or GET, naturally idempotent) can safely have 5xx retried
+    # (section 8 of the Capability Spec).
     idempotent: bool = False
 
     def with_header(self, name: str, value: str | None) -> "IshtaranHttpRequest":
@@ -53,6 +53,6 @@ class IshtaranHttpResponse:
 
 
 class HttpTransport(Protocol):
-    """A unica implementacao real e HttpxTransport; testes usam FakeHttpTransport, sem rede."""
+    """The only real implementation is HttpxTransport; tests use FakeHttpTransport, no network."""
 
     def send(self, request: IshtaranHttpRequest) -> IshtaranHttpResponse: ...

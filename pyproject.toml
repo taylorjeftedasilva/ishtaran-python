@@ -8,9 +8,9 @@ version = "1.0.0.dev0"
 description = "Official Python SDK for the Ishtaran programmable financial platform API."
 readme = "README.md"
 requires-python = ">=3.10"
-# Licença: decisão de projeto ainda não tomada (ver SDK_CAPABILITY_SPEC.md §16). Placeholder
-# explícito, nunca assumido como open-source silenciosamente. Bloqueia publicação real no PyPI,
-# não bloqueia build/uso local.
+# License: project decision not yet made (see SDK_CAPABILITY_SPEC.md section 16). Explicit
+# placeholder, never silently assumed open-source. Blocks real publication on PyPI, does not
+# block local build/use.
 license = { text = "UNLICENSED - pending project decision, see SDK_CAPABILITY_SPEC.md section 16" }
 authors = [{ name = "Ishtaran" }]
 classifiers = [
@@ -22,6 +22,19 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.27,<1.0",
+    # Self-custody wallet/signing (SPEC-021, checkpoint 10) -- same rationale as TDR-017 (backend)/
+    # bitcoinj+bouncycastle (Java)/noble+scure (TypeScript): focused libraries, each covering
+    # exactly one primitive, never a monolithic wallet framework that would hide byte-order/format
+    # details -- the lesson from checkpoint 8 (a real signature-verification bug, discovered only
+    # in cross-language E2E validation) demands explicit control over exactly which bytes go into
+    # ECDSA. coincurve = real libsecp256k1 (Bitcoin Core) bindings, native DER.
+    # mnemonic = reference BIP39 (Trezor). pycryptodome = real Keccak-256 (not NIST's SHA3-256)
+    # + portable RIPEMD160 (independent of the system's OpenSSL build, unlike
+    # hashlib.new('ripemd160')). base58 = standard Base58Check.
+    "coincurve>=20.0,<22.0",
+    "mnemonic>=0.20,<1.0",
+    "pycryptodome>=3.20,<4.0",
+    "base58>=2.1,<3.0",
 ]
 
 [project.optional-dependencies]

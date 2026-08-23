@@ -9,7 +9,7 @@ from ..util.dotnet_timespan import format_dotnet_timespan
 
 
 class ApiKeysResource(ResourceSupport):
-    """Control Plane -- ApiKeys (2 rotas reais)."""
+    """Control Plane -- ApiKeys (2 real routes)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -19,8 +19,8 @@ class ApiKeysResource(ResourceSupport):
 
     def rotate(self, api_key_id: str, overlap_window: timedelta) -> RotateApiKeyResult:
         """
-        overlap_window e enviado no formato real de TimeSpan do .NET (nao ISO-8601). plain_text_key
-        da nova chave so aparece nesta resposta.
+        overlap_window is sent in the real .NET TimeSpan format (not ISO-8601). The new key's
+        plain_text_key only appears in this response.
         """
         body = self._to_json({"overlapWindow": format_dotnet_timespan(overlap_window)})
         return self._execute(post_request(f"/v1/api-keys/{api_key_id}/rotate", body, False), map_rotate_api_key_result)

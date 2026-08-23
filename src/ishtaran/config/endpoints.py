@@ -1,8 +1,8 @@
 """
-Base URLs centralizadas -- nunca strings de URL espalhadas pelo SDK. LOCAL_BASE_URL e o unico
-default real conhecido hoje (docker-compose local). Sandbox/Production nao tem DNS real
-provisionado ainda (terraform apply nunca rodou -- ver SDK_CAPABILITY_SPEC.md secao 2): resolver
-essas duas sem base_url explicito e um erro de configuracao, nunca um fallback silencioso.
+Centralized base URLs -- never URL strings scattered across the SDK. LOCAL_BASE_URL is the only
+known real default today (local docker-compose). Sandbox/Production do not have real DNS
+provisioned yet (terraform apply has never run -- see SDK_CAPABILITY_SPEC.md section 2): resolving
+either of these without an explicit base_url is a configuration error, never a silent fallback.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ def resolve_base_url(environment: Environment, explicit_base_url: str | None) ->
     if environment == Environment.LOCAL:
         return LOCAL_BASE_URL
     raise ValueError(
-        f"base_url explicito e obrigatorio para Environment.{environment.name} -- nenhuma URL "
-        "real de Sandbox/Production foi provisionada ainda (ver SDK_CAPABILITY_SPEC.md secao 2). "
-        "Configure IshtaranClientConfig.base_url explicitamente."
+        f"An explicit base_url is required for Environment.{environment.name} -- no real "
+        "Sandbox/Production URL has been provisioned yet (see SDK_CAPABILITY_SPEC.md section 2). "
+        "Configure IshtaranClientConfig.base_url explicitly."
     )

@@ -30,8 +30,8 @@ _TERMINAL_STATUSES = {
 
 class WithdrawalsResource(ResourceSupport):
     """
-    Data Plane -- Withdrawals (7 rotas reais). quote() nunca escreve nada (leitura pura); request()
-    sempre expoe estimated_network_fee/estimated_recipient_amount na resposta.
+    Data Plane -- Withdrawals (7 real routes). quote() never writes anything (pure read); request()
+    always exposes estimated_network_fee/estimated_recipient_amount in the response.
     """
 
     def __init__(self, transport: HttpTransport) -> None:
@@ -79,9 +79,9 @@ class WithdrawalsResource(ResourceSupport):
         take: int | None = None,
     ) -> list[WithdrawalResponse]:
         """
-        skip/take sao paginacao real (um dos unicos 2 endpoints do SDK com paginacao de verdade).
-        date_from/date_to passam por urlencode -- nunca concatenados crus (mesma classe de achado
-        de seguranca corrigida em webhook_endpoints_resource.py/todos os outros SDKs, ver
+        skip/take are real pagination (one of only 2 endpoints in the SDK with true pagination).
+        date_from/date_to go through urlencode -- never concatenated raw (same class of security
+        finding fixed in webhook_endpoints_resource.py/all the other SDKs, see
         SECURITY_REVIEW.md).
         """
         params: dict[str, str] = {}
@@ -101,7 +101,7 @@ class WithdrawalsResource(ResourceSupport):
     def list_all(
         self, organization_id: str, page_size: int, status: EnumValue[int] | None = None, date_from: str | None = None, date_to: str | None = None,
     ) -> Iterator[WithdrawalResponse]:
-        """Iterador lazy -- ver SDK_CAPABILITY_SPEC.md secao 12.7."""
+        """Lazy iterator -- see SDK_CAPABILITY_SPEC.md section 12.7."""
         return paginate(page_size, lambda skip, take: self.list(organization_id, status, date_from, date_to, skip, take))
 
     def cancel(self, withdrawal_id: str, reason: str | None = None) -> None:
@@ -112,7 +112,7 @@ class WithdrawalsResource(ResourceSupport):
         self._execute_no_content(post_request(f"/v1/withdrawals/{withdrawal_id}/retry-broadcast", None, False))
 
     def wait_for(self, withdrawal_id: str, timeout_seconds: float, poll_interval_seconds: float) -> WithdrawalResponse:
-        """Polling seguro, nunca infinito -- termina em Completed/Rejected/Cancelled/BroadcastFailed."""
+        """Safe polling, never infinite -- ends at Completed/Rejected/Cancelled/BroadcastFailed."""
         return poll_until(
             lambda: self.get(withdrawal_id),
             lambda r: r.status.raw_value in _TERMINAL_STATUSES,

@@ -1,7 +1,7 @@
 """
-Gera a idempotency_key (campo de corpo, ou header em 2 endpoints especificos de
-OrganizationTenancy -- ver SDK_CAPABILITY_SPEC.md secao 9) quando o consumidor nao fornece uma
-explicitamente. UUID v4 -- mesmo formato aceito pelos campos Guid reais da API.
+Generates the idempotency_key (body field, or header on 2 specific OrganizationTenancy
+endpoints -- see SDK_CAPABILITY_SPEC.md section 9) when the caller doesn't provide one
+explicitly. UUID v4 -- same format accepted by the API's real Guid fields.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
 """
-Unica implementacao real de HttpTransport -- sobre httpx (unica dependencia de producao alem de
-lossless-json-equivalente-nativo do stdlib -- ver util/json_util.py). TLS verificado por padrao;
-nunca desabilitado por este SDK. Redirects NUNCA seguidos automaticamente (paridade com Java
-Redirect.NEVER e com a correcao de seguranca aplicada no SDK TypeScript, ver SECURITY_REVIEW.md).
+The only real implementation of HttpTransport -- built on httpx (the only production
+dependency besides the stdlib's native lossless-json-equivalent -- see util/json_util.py). TLS
+verified by default; never disabled by this SDK. Redirects are NEVER followed automatically
+(parity with Java's Redirect.NEVER and with the security fix applied in the TypeScript SDK, see SECURITY_REVIEW.md).
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from ..error.errors import NetworkError, TimeoutError
 class HttpxTransport(HttpTransport):
     def __init__(self, config: IshtaranClientConfig, transport: httpx.BaseTransport | None = None) -> None:
         """
-        `transport` e um hook so para teste (injeta httpx.MockTransport para exercitar a politica
-        de redirect real sem rede) -- producao nunca passa esse argumento.
+        `transport` is a hook for testing only (injects httpx.MockTransport to exercise the real
+        redirect policy without a network) -- production never passes this argument.
         """
         self._base_url = config.base_url
         self._user_agent = config.user_agent
@@ -39,14 +39,14 @@ class HttpxTransport(HttpTransport):
                 request.method, f"{self._base_url}{request.path}", headers=headers, content=request.body,
             )
         except httpx.TimeoutException as exc:
-            raise TimeoutError(f"Timeout ao chamar {request.method} {request.path}", exc) from exc
+            raise TimeoutError(f"Timeout calling {request.method} {request.path}", exc) from exc
         except httpx.HTTPError as exc:
-            raise NetworkError(f"Falha de rede ao chamar {request.method} {request.path}", exc) from exc
+            raise NetworkError(f"Network failure calling {request.method} {request.path}", exc) from exc
 
         if 300 <= response.status_code < 400:
             raise NetworkError(
-                f"Redirect ({response.status_code}) recebido ao chamar {request.method} {request.path} -- "
-                "este SDK nunca segue redirects automaticamente (mesma politica do SDK Java/TypeScript)."
+                f"Redirect ({response.status_code}) received calling {request.method} {request.path} -- "
+                "this SDK never follows redirects automatically (same policy as the Java/TypeScript SDK)."
             )
 
         return IshtaranHttpResponse(status=response.status_code, headers=dict(response.headers), body=response.text)

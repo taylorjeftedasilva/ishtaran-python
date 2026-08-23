@@ -1,25 +1,24 @@
 # Security
 
-Ver `SECURITY_REVIEW.md` para o checklist formal completo.
+See `SECURITY_REVIEW.md` for the full formal checklist.
 
-## Segredos nunca vazam
+## Secrets never leak
 
-`api_key`/`endpoint_secret`/tokens nunca aparecem em log, exceção, ou `repr()`.
-`IshtaranClientConfig.__repr__` mascara a API Key. Logging opt-in nunca loga
-`Authorization`/`X-Api-Key` em texto puro nem o corpo bruto.
+`api_key`/`endpoint_secret`/tokens never appear in logs, exceptions, or `repr()`.
+`IshtaranClientConfig.__repr__` masks the API Key. Opt-in logging never logs
+`Authorization`/`X-Api-Key` in plain text nor the raw body.
 
 ## TLS
 
-Verificado por padrão (comportamento nativo do `httpx`), sem switch de desabilitar exposto por
-este SDK.
+Verified by default (native `httpx` behavior), with no disable switch exposed by this SDK.
 
 ## Webhook
 
-`hmac.compare_digest` (tempo constante real da stdlib), valida timestamp contra replay, nunca loga
-o secret.
+`hmac.compare_digest` (real stdlib constant time), validates the timestamp against replay,
+never logs the secret.
 
-## Dependências
+## Dependencies
 
-Mínimas: `httpx` (única dependência de produção — transporte HTTP síncrono maduro/amplamente
-usado). `hashlib`/`hmac`/`json`/`decimal` nativos do stdlib, zero dependência de terceiros para
-precisão de dinheiro (`json.loads(parse_float=Decimal, parse_int=Decimal)`) ou HMAC.
+Minimal: `httpx` (the only production dependency — mature, widely used synchronous HTTP
+transport). Native stdlib `hashlib`/`hmac`/`json`/`decimal`, zero third-party dependency for
+money precision (`json.loads(parse_float=Decimal, parse_int=Decimal)`) or HMAC.

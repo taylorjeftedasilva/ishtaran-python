@@ -1,6 +1,6 @@
 """
-Politica de retry -- ver SDK_CAPABILITY_SPEC.md secao 8. Retry so em falha de conexao, 429
-(respeitando Retry-After), e 5xx quando a chamada tem Idempotency-Key. Nunca em 4xx deterministico.
+Retry policy -- see SDK_CAPABILITY_SPEC.md section 8. Retries only on connection failure, 429
+(honoring Retry-After), and 5xx when the call carries an Idempotency-Key. Never on a deterministic 4xx.
 """
 
 from __future__ import annotations

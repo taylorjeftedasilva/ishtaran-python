@@ -1,6 +1,6 @@
 """
-05 -- Criar um Payment Intent via Core API. O deposit_address real so aparece no GET dedicado
-(nunca na resposta do POST de criacao -- comportamento real da API, nao limitacao do SDK).
+05 -- Create a Payment Intent via the Core API. The real deposit_address only appears on the
+dedicated GET (never in the creation POST's response -- real API behavior, not an SDK limitation).
 """
 
 import os

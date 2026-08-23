@@ -31,6 +31,9 @@ class SignUpResponse:
     organization_id: str
     member_id: str
     token: TokenResult
+    application_id: str
+    environment_id: str
+    api_key_plain_text: str | None
 
 
 def map_sign_up_response(raw: Any) -> SignUpResponse:
@@ -38,6 +41,9 @@ def map_sign_up_response(raw: Any) -> SignUpResponse:
         organization_id=string_field(raw, "organizationId"),
         member_id=string_field(raw, "memberId"),
         token=map_token_result(field(raw, "token")),
+        application_id=string_field(raw, "applicationId"),
+        environment_id=string_field(raw, "environmentId"),
+        api_key_plain_text=string_field_or_none(raw, "apiKeyPlainText"),
     )
 
 

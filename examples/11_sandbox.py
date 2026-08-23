@@ -1,6 +1,6 @@
 """
-11 -- Fluxo completo de Sandbox: credita saldo de teste via Faucet e confirma. Nunca funciona
-contra Production real (o backend rejeita simulacoes fora de um Environment do tipo Sandbox).
+11 -- Full Sandbox flow: credits test balance via the Faucet and confirms it. Never works
+against real Production (the backend rejects simulations outside a Sandbox-type Environment).
 """
 
 import os
@@ -17,7 +17,7 @@ observed_address = client.sandbox.faucet(environment_id, "TDepositAddressReal", 
 print("sandbox_observed_address_id=", observed_address.sandbox_observed_address_id)
 
 client.sandbox.simulate_confirmation(environment_id, observed_address.sandbox_observed_address_id, 3, True)
-print("Confirmacao simulada -- o Deposit real sera processado via Outbox (assincrono).")
+print("Simulated confirmation -- the real Deposit will be processed via the Outbox (asynchronous).")
 
 treasury_balance = client.sandbox.get_treasury_balance(environment_id, asset_network_id)
-print("Treasury observada:", treasury_balance.balance)
+print("Observed treasury:", treasury_balance.balance)

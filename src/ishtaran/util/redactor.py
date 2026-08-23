@@ -1,8 +1,8 @@
 """
-Mascaramento central de segredos para log/repr/mensagens de erro -- nunca o valor bruto. Formato
-generico (4 primeiros + **** + 4 ultimos): a API Key real do Ishtaran nao tem prefixo de ambiente
-(Base64 puro de 32 bytes -- ver SDK_CAPABILITY_SPEC.md secao 12.5), entao este SDK nunca assume um
-prefixo tipo sk_live_ que nao existe de verdade.
+Central secret masking for log/repr/error messages -- never the raw value. Generic format
+(first 4 + **** + last 4): the real Ishtaran API Key has no environment prefix
+(pure 32-byte Base64 -- see SDK_CAPABILITY_SPEC.md section 12.5), so this SDK never assumes a
+sk_live_-style prefix that doesn't really exist.
 """
 
 from __future__ import annotations

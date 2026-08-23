@@ -32,8 +32,8 @@ class WebhookDeliveryResponse:
     webhook_delivery_id: str
     webhook_endpoint_id: str
     event_type: str | None
-    # sequenceNumber e int64 -- str preserva precisao mesmo alem de valores seguros de int nativo
-    # (Python int e arbitrary-precision, entao aqui e so por paridade conceitual com TS/Java).
+    # sequenceNumber is int64 -- str preserves precision even beyond native int's safe range
+    # (Python int is arbitrary-precision, so this is only for conceptual parity with TS/Java).
     sequence_number: str
     status: EnumValue[int]
     attempt_count: int

@@ -6,7 +6,7 @@ from ..model.webhook_endpoints import RedeliverWebhookResult, WebhookDeliveryRes
 
 
 class WebhookDeliveriesResource(ResourceSupport):
-    """Control Plane (gestao) -- WebhookDeliveries (2 rotas reais, mesmo modulo Notifications)."""
+    """Control Plane (management) -- WebhookDeliveries (2 real routes, same Notifications module)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)

@@ -14,7 +14,7 @@ from ..model.enum_factory import EnumValue
 
 
 class MembersResource(ResourceSupport):
-    """Control Plane -- Members (7 rotas reais, IdentityAccess)."""
+    """Control Plane -- Members (7 real routes, IdentityAccess)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
@@ -24,7 +24,7 @@ class MembersResource(ResourceSupport):
         return self._execute(post_request(f"/v1/organizations/{organization_id}/members", body, False), map_invite_member_result)
 
     def accept_invite(self, invite_token: str, password: str) -> TokenResult:
-        """Devolve o token real de acesso -- mesmo mecanismo de auth.login() preenche a sessao do client."""
+        """Returns the real access token -- the same mechanism as auth.login() populates the client session."""
         body = self._to_json({"inviteToken": invite_token, "password": password})
         return self._execute(post_request("/v1/members/accept-invite", body, False), map_token_result)
 

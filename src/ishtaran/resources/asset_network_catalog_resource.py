@@ -17,8 +17,8 @@ _STATUS_TO_RAW_INT = {"ENABLED": 1, "PAUSED": 2, "DISABLED": 3}
 
 class AssetNetworkCatalogResource(ResourceSupport):
     """
-    Catalogo -- AssetNetworkCatalog (6 rotas reais, so leitura no escopo do SDK). Sempre Member
-    JWT -- nao aceita API Key hoje (Known Gap real, ver SDK_CAPABILITY_SPEC.md secao 12.3).
+    Catalog -- AssetNetworkCatalog (6 real routes, read-only within the SDK's scope). Always Member
+    JWT -- does not accept an API Key today (real Known Gap, see SDK_CAPABILITY_SPEC.md section 12.3).
     """
 
     def __init__(self, transport: HttpTransport) -> None:
@@ -38,8 +38,8 @@ class AssetNetworkCatalogResource(ResourceSupport):
 
     def list_asset_networks(self, status: EnumValue[str] | None = None) -> list[AssetNetworkResponse]:
         """
-        status e enviado como INTEIRO bruto na query string, per o contrato documentado do OpenAPI
-        real -- mesmo a resposta devolvendo o status como string (Grupo A).
+        status is sent as a raw INTEGER in the query string, per the documented contract of the
+        real OpenAPI -- even though the response returns status as a string (Group A).
         """
         path = "/v1/asset-networks"
         if status is not None:
@@ -53,4 +53,4 @@ class AssetNetworkCatalogResource(ResourceSupport):
         try:
             return _STATUS_TO_RAW_INT[status.name]
         except KeyError as exc:
-            raise ValueError(f"Valor de AssetNetworkStatus desconhecido para filtro: {status.name}") from exc
+            raise ValueError(f"Unknown AssetNetworkStatus value for filter: {status.name}") from exc

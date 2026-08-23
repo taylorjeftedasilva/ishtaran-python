@@ -7,7 +7,7 @@ from ..model.enum_factory import EnumValue
 
 
 class ApplicationsResource(ResourceSupport):
-    """Control Plane -- Applications (4 rotas reais, alem de create em OrganizationsResource)."""
+    """Control Plane -- Applications (4 real routes, plus create in OrganizationsResource)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)

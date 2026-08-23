@@ -1,8 +1,8 @@
 """
-RotateApiKeyRequest.overlap_window e um TimeSpan real do .NET (sem converter customizado
-registrado -- confirmado via grep em OrganizationTenancy.Contracts), serializado no formato
-constante "c" do System.Text.Json nativo desde .NET 6: [-][d.]hh:mm:ss[.fffffff]. Nunca usar o
-formato ISO-8601 de timedelta aqui -- quebraria a chamada real.
+RotateApiKeyRequest.overlap_window is a real .NET TimeSpan (no custom converter
+registered -- confirmed via grep in OrganizationTenancy.Contracts), serialized in the constant
+"c" format used natively by System.Text.Json since .NET 6: [-][d.]hh:mm:ss[.fffffff]. Never use
+timedelta's ISO-8601 format here -- it would break the real call.
 """
 
 from __future__ import annotations

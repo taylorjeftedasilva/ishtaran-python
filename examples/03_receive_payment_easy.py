@@ -1,6 +1,6 @@
 """
-03 -- Receber um pagamento via Easy Mode: compoe Transaction + Payment Intent, devolve o
-deposit_address real com os IDs reais do Core para debugging.
+03 -- Receive a payment via Easy Mode: composes Transaction + Payment Intent, returns the real
+deposit_address with the real Core IDs for debugging.
 """
 
 import os
@@ -22,4 +22,4 @@ print("payment_intent_id=", payment.payment_intent_id)
 print("deposit_address=", payment.deposit_address)
 
 finished = client.wait_for_payment(payment.transaction_id, payment.payment_intent_id, timeout_seconds=600, poll_interval_seconds=5)
-print("Status final:", finished.payment_intent_status.name)
+print("Final status:", finished.payment_intent_status.name)

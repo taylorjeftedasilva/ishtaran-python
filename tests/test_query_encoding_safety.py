@@ -1,7 +1,7 @@
 """
-Cobre um achado real desta sessao: date_from/date_to (strings livres) eram concatenados crus na
-query string de WithdrawalsResource.list/LedgerResource.list_entries, o mesmo padrao de risco ja
-encontrado e corrigido em WebhookEndpointsResource. Corrigido com urlencode em ambos.
+Covers a real finding from this session: date_from/date_to (free-form strings) were concatenated
+raw into the query string of WithdrawalsResource.list/LedgerResource.list_entries, the same risk
+pattern already found and fixed in WebhookEndpointsResource. Fixed with urlencode in both.
 """
 
 from decimal import Decimal

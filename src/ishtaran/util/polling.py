@@ -1,6 +1,6 @@
 """
-Base compartilhada de todo wait_for do SDK -- nunca polling infinito, sempre timeout_seconds
-explicito (ver SDK_CAPABILITY_SPEC.md secao 15).
+Shared base for every wait_for in the SDK -- never infinite polling, always an explicit
+timeout_seconds (see SDK_CAPABILITY_SPEC.md section 15).
 """
 
 from __future__ import annotations
@@ -26,5 +26,5 @@ def poll_until(
         if is_done(result):
             return result
         if time.monotonic() > deadline:
-            raise TimeoutError(f"wait_for excedeu o timeout de {timeout_seconds}s aguardando {description}")
+            raise TimeoutError(f"wait_for exceeded the timeout of {timeout_seconds}s waiting for {description}")
         time.sleep(poll_interval_seconds)

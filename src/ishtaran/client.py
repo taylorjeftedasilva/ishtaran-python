@@ -16,6 +16,7 @@ from .model.data_plane import BalanceResponse, ParticipantInput, WithdrawalRespo
 from .model.enum_factory import EnumValue
 from .model.enums import PaymentIntentStatus
 from .resources.accounts_resource import AccountsResource
+from .resources.account_holders_resource import AccountHoldersResource
 from .resources.api_keys_resource import ApiKeysResource
 from .resources.applications_resource import ApplicationsResource
 from .resources.asset_network_catalog_resource import AssetNetworkCatalogResource
@@ -31,6 +32,8 @@ from .resources.refunds_resource import RefundsResource
 from .resources.sandbox_resource import SandboxResource
 from .resources.settlements_resource import SettlementsResource
 from .resources.transactions_resource import TransactionsResource
+from .resources.signing_requests_resource import SigningRequestsResource
+from .resources.wallets_resource import WalletsResource
 from .resources.webhook_deliveries_resource import WebhookDeliveriesResource
 from .resources.webhook_endpoints_resource import WebhookEndpointsResource
 from .resources.withdrawals_resource import WithdrawalsResource
@@ -60,15 +63,23 @@ class EasyPaymentResult:
 
 class IshtaranClient:
     """
-    Fachada publica unica do SDK. Compoe Core (resources) e Easy Mode sobre o MESMO transporte
-    HTTP -- Easy Mode nunca duplica logica de negocio, so combina chamadas Core (ver
-    SDK_CAPABILITY_SPEC.md secao 5).
+    The SDK's single public facade. Composes Core (resources) and Easy Mode over the SAME HTTP
+    transport -- Easy Mode never duplicates business logic, it only combines Core calls (see
+    SDK_CAPABILITY_SPEC.md section 5).
     """
 
     def __init__(self, raw_transport: HttpTransport, api_key: str | None, retry_policy: RetryPolicy) -> None:
         bearer_token_holder = BearerTokenHolder()
         authenticated: HttpTransport = AuthenticatingTransport(raw_transport, api_key, bearer_token_holder)
         transport: HttpTransport = RetryingTransport(authenticated, retry_policy)
+
+        # DEC-032 -- own transport for AccountHolder, never the Organization's api_key nor the
+        # Member bearer_token_holder above: complete domain separation between the two
+        # principals, the same reasoning as AccountHolderJwtScheme never sharing a key with
+        # MemberJwtScheme on the backend.
+        account_holder_token_holder = BearerTokenHolder()
+        account_holder_authenticated: HttpTransport = AuthenticatingTransport(raw_transport, None, account_holder_token_holder)
+        account_holder_transport: HttpTransport = RetryingTransport(account_holder_authenticated, retry_policy)
 
         self.auth = AuthResource(transport, bearer_token_holder)
         self.organizations = OrganizationsResource(transport)
@@ -78,6 +89,7 @@ class IshtaranClient:
         self.members = MembersResource(transport)
         self.asset_network_catalog = AssetNetworkCatalogResource(transport)
         self.accounts = AccountsResource(transport)
+        self.account_holders = AccountHoldersResource(account_holder_transport, account_holder_token_holder)
         self.transactions = TransactionsResource(transport)
         self.deposits = DepositsResource(transport)
         self.ledger = LedgerResource(transport)
@@ -90,6 +102,10 @@ class IshtaranClient:
         self.sandbox = SandboxResource(transport)
         self.webhook_endpoints = WebhookEndpointsResource(transport)
         self.webhook_deliveries = WebhookDeliveriesResource(transport)
+        # SPEC-018/021, checkpoint 10 -- only the extended PUBLIC key travels through this client (INV-SC-01).
+        self.wallets = WalletsResource(transport)
+        # SPEC-019/020/021, checkpoint 10 -- the SDK signs locally (wallet.signer) and submits it back.
+        self.signing_requests = SigningRequestsResource(transport)
 
     @staticmethod
     def create(
@@ -117,13 +133,13 @@ class IshtaranClient:
 
     @staticmethod
     def for_testing(transport: HttpTransport) -> "IshtaranClient":
-        """Injeta um HttpTransport falso (sem rede), sem retry (ja tem suite propria dedicada)."""
+        """Injects a fake HttpTransport (no network), no retry (already has its own dedicated suite)."""
         return IshtaranClient(transport, None, disabled_retry_policy())
 
     # ---- Easy Mode ----
 
     def get_balance(self, account_id: str, asset_network_id: str) -> BalanceResponse:
-        """Passagem direta para ledger.get_balance() -- sem transformacao de negocio."""
+        """Direct pass-through to ledger.get_balance() -- no business transformation."""
         return self.ledger.get_balance(account_id, asset_network_id)
 
     def withdraw(
@@ -135,7 +151,7 @@ class IshtaranClient:
         destination_address: str,
         existing_destination_id: str | None = None,
     ) -> EasyWithdrawResult:
-        """Compoe withdrawals.create_destination() (se necessario) + .request() -- nunca esconde a Network Fee."""
+        """Composes withdrawals.create_destination() (if needed) + .request() -- never hides the Network Fee."""
         destination_id = existing_destination_id
         if not destination_id:
             destination = self.withdrawals.create_destination(organization_id, destination_address, asset_network_id)
@@ -152,7 +168,7 @@ class IshtaranClient:
     def receive_payment(
         self, organization_id: str, application_id: str, payer_account_id: str, recipient_account_id: str, asset_network_id: str, amount: Decimal,
     ) -> EasyPaymentResult:
-        """Compoe transactions.create() + deposits.create_payment_intent() + GET de acompanhamento."""
+        """Composes transactions.create() + deposits.create_payment_intent() + a follow-up GET."""
         participants = [
             ParticipantInput(account_id=payer_account_id, role="payer", is_payer=True),
             ParticipantInput(account_id=recipient_account_id, role="recipient", is_payer=False),
@@ -174,7 +190,7 @@ class IshtaranClient:
         )
 
     def wait_for_payment(self, transaction_id: str, payment_intent_id: str, timeout_seconds: float, poll_interval_seconds: float) -> EasyPaymentResult:
-        """Polling seguro -- nunca infinito. Termina quando o Payment Intent sai de PENDING/PARTIALLY_PAID."""
+        """Safe polling -- never infinite. Ends when the Payment Intent leaves PENDING/PARTIALLY_PAID."""
         pending = PaymentIntentStatus.PENDING.raw_value  # type: ignore[attr-defined]
         partially_paid = PaymentIntentStatus.PARTIALLY_PAID.raw_value  # type: ignore[attr-defined]
         return poll_until(
@@ -186,5 +202,5 @@ class IshtaranClient:
         )
 
     def verify_webhook_signature(self, raw_body: str, signature_header: str, timestamp_header: str, endpoint_secret: str) -> bool:
-        """Sem chamada HTTP -- calculo local."""
+        """No HTTP call -- local computation."""
         return verify_webhook_signature(raw_body, signature_header, timestamp_header, endpoint_secret)

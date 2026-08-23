@@ -1,6 +1,6 @@
 """
-Logging opt-in (so ativo quando enable_logging=True na config) -- nunca loga
-Authorization/X-Api-Key em texto puro (redacao central), nunca loga o corpo bruto.
+Opt-in logging (only active when enable_logging=True in the config) -- never logs
+Authorization/X-Api-Key in plain text (central redaction), never logs the raw body.
 """
 
 from __future__ import annotations

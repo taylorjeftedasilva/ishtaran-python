@@ -1,17 +1,17 @@
 """
-Ver SDK_CAPABILITY_SPEC.md secao 11.3 para a tabela completa nome-valor extraida literalmente dos
-enums C# reais. Grupo B = inteiro bruto no JSON; Grupo A = string legivel.
+See SDK_CAPABILITY_SPEC.md section 11.3 for the complete name-value table extracted literally from
+the real C# enums. Group B = raw integer in JSON; Group A = human-readable string.
 
-Nota de tipagem: EnumRegistry usa setattr dinamico para expor STATUS.COMPLETED etc.; isso nao e
-100% amigavel a checagem estatica mypy --strict (atributos dinamicos nao sao inferidos
-estaticamente) -- limitacao conhecida e documentada, ver PYTHON_SDK_CHECKPOINT.md.
+Typing note: EnumRegistry uses dynamic setattr to expose STATUS.COMPLETED etc.; this is not
+100% friendly to mypy --strict static checking (dynamic attributes are not statically
+inferred) -- known and documented limitation, see PYTHON_SDK_CHECKPOINT.md.
 """
 
 from __future__ import annotations
 
 from .enum_factory import create_enum
 
-# ---- Grupo B (inteiro) ----
+# ---- Group B (integer) ----
 DepositStatus = create_enum({
     "DETECTED": 0, "CONFIRMING": 1, "CONFIRMED": 2, "UNDER_REVIEW": 3, "REORG_DETECTED": 4, "REJECTED": 5,
 })
@@ -40,12 +40,20 @@ EntryNature = create_enum({"AVAILABLE": 0, "PENDING": 1, "RESERVED": 2})
 ConditionOperator = create_enum({"EQUALS": 1, "GREATER_THAN_OR_EQUAL": 2, "LESS_THAN_OR_EQUAL": 3})
 EventSource = create_enum({"APPLICATION": 1, "PLATFORM_TIMER": 2, "MANUAL_REVIEW": 3})
 SimulatedBroadcastOutcome = create_enum({"ACCEPTED": 1, "FAILED": 2})
-# So usado em REQUEST (CreateEnvironmentRequest.type) -- sem EnvironmentResponse real na API.
+# Used only in REQUEST (CreateEnvironmentRequest.type) -- no real EnvironmentResponse in the API.
 EnvironmentType = create_enum({"SANDBOX": 1, "PRODUCTION": 2})
-# So usado em REQUEST (InviteMemberRequest.role/AssignRoleRequest.newRole) -- resposta e Grupo A.
-MemberRoleRequest = create_enum({"OWNER": 1, "ADMIN": 2, "FINANCEIRO": 3, "LEITURA": 4})
+# ExecutionCustody.Contracts.Enums.DerivationScheme (SPEC-021, checkpoint 10) -- wire-format only, Group B.
+DerivationScheme = create_enum({"TRON_BIP44_HARDENED_ACCOUNT": 1})
+# Used only in REQUEST (InviteMemberRequest.role/AssignRoleRequest.newRole) -- response is Group A.
+# NOTE: FINANCE/READ_ONLY are local Python identifiers only; only the integer raw_value travels
+# over the wire (see enum_factory.py), so translating these symbol names is safe. The backend's
+# MemberRole enum (IdentityAccess.Domain.Enums.MemberRole) serializes the RESPONSE-side role by
+# name as the literal "Financeiro"/"Leitura" strings, but this SDK models the response `role`
+# field as a plain `str` (see model/control_plane.py, model/data_plane.py,
+# model/execution_custody.py) with no mirroring enum symbol, so there is no wire-value gap here.
+MemberRoleRequest = create_enum({"OWNER": 1, "ADMIN": 2, "FINANCE": 3, "READ_ONLY": 4})
 
-# ---- Grupo A (string) ----
+# ---- Group A (string) ----
 AccountStatus = create_enum({"ACTIVE": "Active", "FROZEN": "Frozen", "CLOSED": "Closed"})
 ApplicationStatus = create_enum({"ACTIVE": "Active", "SUSPENDED": "Suspended", "ARCHIVED": "Archived"})
 OrganizationStatus = create_enum({"ACTIVE": "Active", "SUSPENDED": "Suspended", "CLOSED": "Closed"})

@@ -4,32 +4,32 @@
 client = IshtaranClient.create(
     api_key="...",
     environment=Environment.LOCAL,
-    base_url="http://localhost:8080",  # sempre explícito quando presente
+    base_url="http://localhost:8080",  # always explicit when present
     connect_timeout_seconds=5.0,       # default
     request_timeout_seconds=30.0,      # default
-    enable_logging=True,               # opt-in, nunca ligado por padrão
+    enable_logging=True,               # opt-in, never on by default
 )
 ```
 
 ## `base_url`/`Environment`
 
-| Environment | Default | `base_url` explícito? |
+| Environment | Default | Explicit `base_url`? |
 |---|---|---|
-| `LOCAL` | `http://localhost:8080` | Não |
-| `SANDBOX`/`PRODUCTION` | **nenhum** — infra ainda não provisionada | **Sim, obrigatório** |
+| `LOCAL` | `http://localhost:8080` | No |
+| `SANDBOX`/`PRODUCTION` | **none** — infra not yet provisioned | **Yes, required** |
 
-Construir sem `base_url` para `SANDBOX`/`PRODUCTION` lança `ValueError` imediatamente — nunca
-aponta para uma URL inventada.
+Constructing without `base_url` for `SANDBOX`/`PRODUCTION` raises `ValueError` immediately — it
+never points to a made-up URL.
 
 ## TLS
 
-Verificado por padrão (comportamento nativo do `httpx`); nunca desabilitado por este SDK.
+Verified by default (native `httpx` behavior); never disabled by this SDK.
 
 ## Redirects
 
-`httpx.Client(follow_redirects=False)` — qualquer 3xx é tratado como `NetworkError`, nunca seguido
-automaticamente (mesma política do Java/TypeScript).
+`httpx.Client(follow_redirects=False)` — any 3xx is treated as a `NetworkError`, never followed
+automatically (same policy as Java/TypeScript).
 
 ## User-Agent
 
-`ishtaran-python/<versão>` — fixo, sem dado pessoal.
+`ishtaran-python/<version>` — fixed, no personal data.

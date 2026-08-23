@@ -6,7 +6,7 @@ from ..model.workflow import CreateEventTypeResult, EventTypeResponse, map_creat
 
 
 class EventTypesResource(ResourceSupport):
-    """Data Plane -- EventTypes (2 rotas reais, mesmo modulo WorkflowRules)."""
+    """Data Plane -- EventTypes (2 real routes, same WorkflowRules module)."""
 
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)

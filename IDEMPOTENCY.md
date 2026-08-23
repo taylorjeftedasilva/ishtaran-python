@@ -1,21 +1,22 @@
 # Idempotency
 
-Dois mecanismos reais (ver `SDK_CAPABILITY_SPEC.md` §9):
+Two real mechanisms (see `SDK_CAPABILITY_SPEC.md` §9):
 
-## Campo de corpo — todo endpoint financeiro
+## Body field — every financial endpoint
 
 `transactions.create`, `deposits.create_payment_intent`, `settlements.execute_settlement`,
-`refunds.execute_refund`, `withdrawals.request`, `events.ingest` — parâmetro opcional
-`idempotency_key`; omitido, o SDK gera um UUID v4 automaticamente; explícito, nunca sobrescrito.
+`refunds.execute_refund`, `withdrawals.request`, `events.ingest` — optional parameter
+`idempotency_key`; if omitted, the SDK generates a UUID v4 automatically; if explicit, it is
+never overwritten.
 
-## Header `Idempotency-Key` — só 2 endpoints reais
+## `Idempotency-Key` header — only 2 real endpoints
 
-`organizations.create(...)` e `organizations.create_application(...)` — os únicos 2 lugares do
-backend que usam header em vez de campo de corpo (confirmado em código-fonte). Mesma política de
-auto-geração.
+`organizations.create(...)` and `organizations.create_application(...)` — the only 2 places in
+the backend that use a header instead of a body field (confirmed in source code). Same
+auto-generation policy.
 
-## Reenvio
+## Resubmission
 
-Mesma chave + mesmo payload = seguro (replay). Mesma chave + payload diferente =
-`IdempotencyConflictError` (409). Retry automático (`RETRIES.md`) reusa a mesma chave da primeira
-tentativa, nunca gera uma nova por tentativa.
+Same key + same payload = safe (replay). Same key + different payload =
+`IdempotencyConflictError` (409). Automatic retry (`RETRIES.md`) reuses the same key from the
+first attempt, never generates a new one per attempt.

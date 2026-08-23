@@ -21,8 +21,8 @@ from ..model.sandbox import (
 
 class SandboxResource(ResourceSupport):
     """
-    Data Plane, exclusivo de Environment do tipo Sandbox -- Sandbox (9 rotas reais). Nunca
-    disponivel/valido contra Production (o backend rejeita com 422 se o Environment nao for Sandbox).
+    Data Plane, exclusive to Environments of type Sandbox -- Sandbox (9 real routes). Never
+    available/valid against Production (the backend rejects with 422 if the Environment is not Sandbox).
     """
 
     def __init__(self, transport: HttpTransport) -> None:

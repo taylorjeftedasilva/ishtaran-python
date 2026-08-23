@@ -1,7 +1,7 @@
 """
-Decorator de retry -- ver SDK_CAPABILITY_SPEC.md secao 8. So reintenta: falha de conexao/timeout
-(sempre), HTTP 429 (sempre, respeitando Retry-After quando presente), HTTP 5xx (so se
-request.idempotent). Nunca reintenta 400/401/403/404/409/422 -- sao deterministicos.
+Retry decorator -- see SDK_CAPABILITY_SPEC.md section 8. Only retries: connection/timeout failure
+(always), HTTP 429 (always, honoring Retry-After when present), HTTP 5xx (only if
+request.idempotent). Never retries 400/401/403/404/409/422 -- those are deterministic.
 """
 
 from __future__ import annotations

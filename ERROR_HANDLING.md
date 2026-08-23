@@ -1,22 +1,22 @@
 # Error Handling
 
-Toda exceção é subclasse de `IshtaranError` (ver `SDK_CAPABILITY_SPEC.md` §6):
+Every exception is a subclass of `IshtaranError` (see `SDK_CAPABILITY_SPEC.md` §6):
 
 ```
 IshtaranError
-├── AuthenticationError       (401 — sem code/details)
-├── AuthorizationError        (403 — idem)
-├── ValidationError           (400, code=VALIDATION_ERROR — 1 string, nunca lista por campo)
+├── AuthenticationError       (401 — no code/details)
+├── AuthorizationError        (403 — same)
+├── ValidationError           (400, code=VALIDATION_ERROR — 1 string, never a per-field list)
 ├── NotFoundError             (404, code=NOT_FOUND)
-├── ConflictError             (409 — vários code)
+├── ConflictError             (409 — various codes)
 ├── IdempotencyConflictError  (409, code=IDEMPOTENCY_KEY_CONFLICT — extends ConflictError)
 ├── RateLimitError            (429, code=RATE_LIMITED — retry_after_seconds)
-├── NetworkError              (falha de transporte)
-├── TimeoutError              (timeout de request, ou wait_for excedendo o prazo)
-└── ApiError                  (fallback — preserva http_status/code/details brutos)
+├── NetworkError              (transport failure)
+├── TimeoutError              (request timeout, or wait_for exceeding its deadline)
+└── ApiError                  (fallback — preserves raw http_status/code/details)
 ```
 
-## Uso
+## Usage
 
 ```python
 from ishtaran import ValidationError, RateLimitError, IshtaranError
@@ -25,27 +25,27 @@ import time
 try:
     client.withdrawals.request(org_id, account_id, dest_id, asset_network_id, amount)
 except ValidationError as e:
-    print("Validação falhou:", e.message)
+    print("Validation failed:", e.message)
 except RateLimitError as e:
     time.sleep(e.retry_after_seconds or 1)
 except IshtaranError as e:
-    print(f"Falha ({e.http_status}):", e.message)
+    print(f"Failed ({e.http_status}):", e.message)
 ```
 
-## Campos disponíveis
+## Available fields
 
-`http_status`, `code`, `request_id` (sempre `None` hoje — API real não tem mecanismo de correlation
-ID, §12.1), `details` (corpo bruto), `retryable`.
+`http_status`, `code`, `request_id` (always `None` today — the real API has no correlation ID
+mechanism, §12.1), `details` (raw body), `retryable`.
 
-## Por que 401/403 não têm `code`/`details`
+## Why 401/403 have no `code`/`details`
 
-Nenhum `AuthenticationHandler` do backend registra challenge customizado — o middleware de
-autenticação responde com corpo vazio antes de chegar no handler que produz `ProblemDetails`.
+No backend `AuthenticationHandler` registers a custom challenge — the authentication middleware
+responds with an empty body before reaching the handler that produces `ProblemDetails`.
 
-## Nota de nomenclatura
+## Naming note
 
-`ishtaran.TimeoutError` sombreia deliberadamente `builtins.TimeoutError`, para manter paridade
-exata de nome com Java/TypeScript (regra do brief). Código interno do SDK que precisa do timeout de
-rede real usa `httpx.TimeoutException`, não o builtin — sem colisão prática. Se seu código também
-usa `builtins.TimeoutError`, importe com um alias: `from ishtaran import TimeoutError as
+`ishtaran.TimeoutError` deliberately shadows `builtins.TimeoutError`, to keep exact name parity
+with Java/TypeScript (rule from the brief). Internal SDK code that needs the real network timeout
+uses `httpx.TimeoutException`, not the builtin — no practical collision. If your own code also
+uses `builtins.TimeoutError`, import with an alias: `from ishtaran import TimeoutError as
 IshtaranTimeoutError`.
