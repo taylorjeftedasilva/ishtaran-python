@@ -8,10 +8,7 @@ version = "1.0.0.dev0"
 description = "Official Python SDK for the Ishtaran programmable financial platform API."
 readme = "README.md"
 requires-python = ">=3.10"
-# License: project decision not yet made (see SDK_CAPABILITY_SPEC.md section 16). Explicit
-# placeholder, never silently assumed open-source. Blocks real publication on PyPI, does not
-# block local build/use.
-license = { text = "UNLICENSED - pending project decision, see SDK_CAPABILITY_SPEC.md section 16" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "Ishtaran" }]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -19,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Typing :: Typed",
+    "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
     "httpx>=0.27,<1.0",
@@ -46,7 +44,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://ishtaran.com"
-Repository = "https://github.com/ishtaran/ishtaran-python"
+Repository = "https://github.com/taylorjeftedasilva/ishtaran-python"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ishtaran"]

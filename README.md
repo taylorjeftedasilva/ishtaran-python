@@ -213,5 +213,4 @@ from this source repository — see [Installation](#installation) above.
 
 ## License
 
-Not yet decided by the project — see [`pyproject.toml`](pyproject.toml). No license terms should
-be assumed until a formal decision is published here.
+This SDK is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
