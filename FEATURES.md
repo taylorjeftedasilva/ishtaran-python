@@ -1,6 +1,6 @@
 # Features
 
-Derived from [`SDK_FEATURE_MATRIX.md`](../../SDK_FEATURE_MATRIX.md). Core API: 93/93 real
+Derived from the real API contract (see the [API Reference](https://ishtaran.com/docs/api/ishtaran-api)). Core API: 93/93 real
 operations (16/16 modules). Easy Mode: 100%. Cross-cutting: 100% (config, auth, errors, retry,
 idempotency, pagination, forward-compatible enums, security/redaction, opt-in logging, safe
 wait_for, validated wheel+sdist packaging).
