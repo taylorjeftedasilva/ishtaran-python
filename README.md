@@ -106,13 +106,12 @@ This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and
 
 ## Installation
 
-Not yet published on PyPI — package registry distribution is planned alongside the public
-Sandbox launch (see [Package distribution roadmap](#package-distribution-roadmap)). The source is
-public today:
-
 ```bash
-pip install git+https://github.com/taylorjeftedasilva/ishtaran-python.git
+pip install ishtaran
 ```
+
+`0.1.0` is a real, published **Development Preview** release on PyPI -- verified live with a
+real `pip install` from a clean environment. See [CHANGELOG.md](CHANGELOG.md) for what's in it.
 
 Or for local development:
 
@@ -207,9 +206,9 @@ real API parity) remains a documented future extension, not a hidden limitation.
 
 ## Package distribution roadmap
 
-Not yet published on a package registry. Alongside the public Sandbox launch, the plan is to
-distribute this SDK through PyPI (`pip install ishtaran`). Until then, build/install directly
-from this source repository — see [Installation](#installation) above.
+`0.1.0` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
+releases follow the same path: a reviewed, tested commit gets a new semver tag, and PyPI
+Trusted Publishing (OIDC, no long-lived token) publishes it automatically.
 
 ## License
 
