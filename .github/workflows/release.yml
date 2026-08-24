@@ -54,7 +54,10 @@ jobs:
       - name: Verify tag matches pyproject.toml version
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          # No TOML parser dependency (tomllib needs Python 3.11+, this job runs
+          # 3.10 to match the SDK's own minimum) -- pyproject.toml's `version =
+          # "x.y.z"` line is simple enough for grep/sed.
+          PKG_VERSION="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/^version = "(.*)"$/\1/')"
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "Tag v$TAG_VERSION does not match pyproject.toml version $PKG_VERSION"
             exit 1
