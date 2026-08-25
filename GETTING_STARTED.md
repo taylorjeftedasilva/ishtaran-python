@@ -3,7 +3,7 @@
 ## 1. Install
 
 ```bash
-pip install -e ".[dev]"   # local, see README.md — not yet published on PyPI
+pip install ishtaran
 ```
 
 ## 2. Build the client
@@ -14,12 +14,14 @@ from ishtaran import IshtaranClient, Environment
 
 client = IshtaranClient.create(
     api_key=os.environ["ISHTARAN_API_KEY"],
-    environment=Environment.LOCAL,
+    environment=Environment.SANDBOX,
 )
 ```
 
-`Environment.SANDBOX`/`PRODUCTION` don't have a known real URL yet — use an explicit `base_url=`
-(see [`CONFIGURATION.md`](CONFIGURATION.md)).
+`Environment.SANDBOX` resolves to the real public Sandbox automatically — no `base_url=` needed.
+`Environment.PRODUCTION` doesn't have a known real URL yet — use an explicit `base_url=` if you
+ever need to point at a self-hosted Local/other instance (see
+[`CONFIGURATION.md`](CONFIGURATION.md)).
 
 ## 3. Check a balance (Easy Mode)
 

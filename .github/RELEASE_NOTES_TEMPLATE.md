@@ -7,7 +7,6 @@ is not GA, not stable, and not production-ready -- see
 - Official Ishtaran SDK, covering the current HTTP API surface (Easy Mode + Core API).
 - Self-custody wallet generation and transaction signing supported end to end -- see
   [Self-custody](../README.md#self-custody) in the README.
-- The public Sandbox is not live yet.
 - Production blockchain execution is not available yet.
 
 See the [README](../README.md) and [CHANGELOG](../CHANGELOG.md) for full detail.

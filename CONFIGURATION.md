@@ -16,10 +16,11 @@ client = IshtaranClient.create(
 | Environment | Default | Explicit `base_url`? |
 |---|---|---|
 | `LOCAL` | `http://localhost:8080` | No |
-| `SANDBOX`/`PRODUCTION` | **none** — infra not yet provisioned | **Yes, required** |
+| `SANDBOX` | `https://sandbox-api.ishtaran.com` (the real, live public Sandbox) | No |
+| `PRODUCTION` | **none** — infra not yet provisioned | **Yes, required** |
 
-Constructing without `base_url` for `SANDBOX`/`PRODUCTION` raises `ValueError` immediately — it
-never points to a made-up URL.
+Constructing without `base_url` for `PRODUCTION` raises `ValueError` immediately — it never
+points to a made-up URL. An explicit `base_url` always overrides the `SANDBOX` default too.
 
 ## TLS
 

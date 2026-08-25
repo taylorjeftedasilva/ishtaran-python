@@ -1,7 +1,7 @@
 import pytest
 
 from ishtaran.config.client_config import build_client_config
-from ishtaran.config.endpoints import LOCAL_BASE_URL
+from ishtaran.config.endpoints import LOCAL_BASE_URL, SANDBOX_BASE_URL
 from ishtaran.config.environment import Environment
 
 
@@ -10,9 +10,9 @@ def test_local_resolves_to_real_default_without_explicit_base_url() -> None:
     assert config.base_url == LOCAL_BASE_URL
 
 
-def test_sandbox_without_explicit_base_url_raises() -> None:
-    with pytest.raises(ValueError):
-        build_client_config(environment=Environment.SANDBOX)
+def test_sandbox_resolves_to_real_default_without_explicit_base_url() -> None:
+    config = build_client_config(environment=Environment.SANDBOX)
+    assert config.base_url == SANDBOX_BASE_URL
 
 
 def test_production_without_explicit_base_url_raises() -> None:

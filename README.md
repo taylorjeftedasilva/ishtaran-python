@@ -4,21 +4,19 @@ Official Python SDK for the [Ishtaran API](https://ishtaran.com) — a programma
 platform (virtual accounts, conditional release workflows, settlements, and self-custody
 blockchain execution).
 
-**Development Preview · Public Sandbox coming soon · Production not yet available**
+**Public Sandbox available · Production not yet available**
 
 ## Project status
 
-Ishtaran is currently under active development.
+Ishtaran's public Sandbox is live and has been validated end to end (signup → payment →
+self-custody signing → simulated broadcast → reconciliation), with all four official SDKs
+published on their real package registries.
 
-The official SDKs already include the current HTTP API capabilities and the self-custody
-wallet/signing protocol, but the public Sandbox is still being prepared.
+- **Public Sandbox:** available now, simulated blockchain execution, no real funds involved.
+- **Production blockchain execution is not available yet** — no real blockchain connector is
+  registered; see [Production status](#production-status) below.
 
-- **Public Sandbox target:** approximately two weeks from August 23, 2026. This is a planned,
-  expected target, not a guarantee.
-- **Production blockchain execution is not available yet.**
-
-See [Sandbox](#sandbox) and [Production status](#production-status) below for what that means
-concretely today.
+See [Sandbox](#sandbox) below for how to point this SDK at it.
 
 ## What this SDK does
 
@@ -129,7 +127,7 @@ from ishtaran import IshtaranClient, Environment
 
 client = IshtaranClient.create(
     api_key=os.environ["ISHTARAN_API_KEY"],
-    environment=Environment.LOCAL,  # or SANDBOX/PRODUCTION with an explicit base_url
+    environment=Environment.SANDBOX,  # resolves to the real public Sandbox; LOCAL/PRODUCTION also available
 )
 
 balance = client.get_balance(account_id, asset_network_id)
@@ -140,14 +138,16 @@ See [`GETTING_STARTED.md`](GETTING_STARTED.md) and [`examples/`](examples/).
 
 ## Sandbox
 
-The public Sandbox is not live yet.
+The public Sandbox is live at `https://sandbox-api.ishtaran.com`
+(`Environment.SANDBOX` resolves to it automatically -- no `base_url` needed, though an explicit
+`base_url` always overrides it). The raw Cloud Run URL from the initial 2026-08-24 deploy still
+works, but is no longer advertised -- use the canonical domain above.
 
-- **Planned target:** approximately two weeks from August 23, 2026.
 - Sandbox uses simulated blockchain execution — no real funds are involved.
-- The self-custody signing protocol described above is still fully exercised in Sandbox:
-  signatures are not skipped just because execution is simulated.
-
-This section will be updated with real onboarding steps when the public Sandbox launches.
+- The self-custody signing protocol described above is fully exercised in Sandbox: signatures
+  are not skipped just because execution is simulated.
+- Rate limits and idempotency behave the same as Production; only the blockchain broadcast is
+  simulated.
 
 ## Production status
 
