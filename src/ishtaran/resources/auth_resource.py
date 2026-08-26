@@ -3,11 +3,12 @@ from __future__ import annotations
 from .resource_support import ResourceSupport
 from ..auth.bearer_token_holder import BearerTokenHolder
 from ..http.types import HttpTransport, post_request
+from ..idempotency.idempotency_key_generator import resolve_idempotency_key
 from ..model.control_plane import SignUpResponse, TokenResult, map_sign_up_response, map_token_result
 
 
 class AuthResource(ResourceSupport):
-    """Control Plane -- /v1/auth/* (5 rotas reais). login() preenche o BearerTokenHolder do client."""
+    """Control Plane -- /v1/auth/* (5 real routes). login() fills the client's BearerTokenHolder."""
 
     def __init__(self, transport: HttpTransport, bearer_token_holder: BearerTokenHolder) -> None:
         super().__init__(transport)
@@ -20,9 +21,17 @@ class AuthResource(ResourceSupport):
             self._bearer_token_holder.set(result.access_token)
         return result
 
-    def sign_up(self, organization_name: str, email: str, password: str) -> SignUpResponse:
+    def sign_up(
+        self, organization_name: str, email: str, password: str, idempotency_key: str | None = None
+    ) -> SignUpResponse:
+        """POST /v1/auth/signup requires an Idempotency-Key header (400 IDEMPOTENCY_KEY_REQUIRED
+        otherwise, real backend behavior -- CompositionRoot.EndpointMapping.SignUpEndpoints).
+        Auto-generated when idempotency_key is None, same convention as OrganizationsResource.create.
+        """
         body = self._to_json({"organizationName": organization_name, "email": email, "password": password})
-        result = self._execute(post_request("/v1/auth/signup", body, False), map_sign_up_response)
+        request = post_request("/v1/auth/signup", body, False)
+        request = request.with_header("Idempotency-Key", resolve_idempotency_key(idempotency_key))
+        result = self._execute(request, map_sign_up_response)
         if result.token.success and result.token.access_token:
             self._bearer_token_holder.set(result.token.access_token)
         return result
@@ -42,5 +51,5 @@ class AuthResource(ResourceSupport):
         self._execute_no_content(post_request("/v1/auth/password-reset/confirm", body, False))
 
     def logout(self) -> None:
-        """Sem chamada HTTP -- permite limpar a sessao local do client."""
+        """No HTTP call -- lets the caller clear the client's local session."""
         self._bearer_token_holder.clear()

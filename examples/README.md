@@ -1,6 +1,6 @@
 # Ishtaran Python SDK -- Examples
 
-13 numbered examples, real code (never pseudocode), verified with `python -m py_compile` +
+14 numbered examples, real code (never pseudocode), verified with `python -m py_compile` +
 `mypy --strict` against the real SDK (`ishtaran`, installed via `pip install -e .`).
 
 | # | File | Demonstrates |
@@ -18,6 +18,7 @@
 | 11 | `11_sandbox.py` | Faucet + simulated confirmation (Sandbox) |
 | 12 | `12_account_holder_invitation.py` | AccountHolder invitation + signup-and-claim (DEC-032) |
 | 13 | `13_self_custody_signing.py` | Self-custody end to end: generates a local wallet, registers it, allocates an address, creates/signs/submits a `SigningRequest`, confirms the broadcast (SPEC-017-021) |
+| 14 | `14_marketplace_journey.py` | Full marketplace journey, verified live against the real Sandbox: self-service signup, self-custody execution wallet, seller `AccountHolder` via invitation, buyer Payment Intent, deposit + confirmation, Settlement, and the real payout signed locally -- connects examples 01/03/12/13 into one closed cycle |
 
 ## Running
 

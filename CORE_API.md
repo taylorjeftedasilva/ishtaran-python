@@ -13,6 +13,10 @@ Complete, literal coverage of the real API — 100 routes, 16 modules (see `SDK_
 `client.accounts`, `client.transactions`, `client.deposits`, `client.ledger`, `client.settlements`,
 `client.refunds`, `client.withdrawals`, `client.workflows`/`event_types`/`events`, `client.sandbox`.
 
+**Except:** `accounts.authorize_application`/`freeze`/`unfreeze`/`close`/`revoke_relationship`
+reject an API Key and require a Member session (verified live, not documented anywhere else --
+`MemberPermissionPolicy.Require`, `AccountsEndpoints.cs`).
+
 ## AccountHolders (isolated session, own auth)
 
 `client.account_holders` — the financial holder's global identity (`DEC-032`): `sign_up`/`login`/
@@ -34,15 +38,23 @@ part of this module is the local signing flow, not the HTTP resource shape.
 from decimal import Decimal
 
 account = client.accounts.create(organization_id, "customer-123")
-client.accounts.authorize_application(account.account_id, application_id)
+# authorize_application requires the Member client (`member_client`), never the API Key one --
+# see the note above.
+member_client.accounts.authorize_application(organization_id, account.account_id, application_id)
 
 txn = client.transactions.create(organization_id, application_id, None, asset_network_id, Decimal("100"), [payer, recipient])
 intent = client.deposits.create_payment_intent(organization_id, txn.transaction_id, asset_network_id, Decimal("100"))
 full_intent = client.deposits.get_payment_intent(intent.payment_intent_id)
 # full_intent.deposit_address -- real address to watch on-chain
 
+# Once the deposit is confirmed, the Transaction reserves itself -- no explicit reserve() call
+# needed or valid in this path (verified live -- calling it here raises BR-TXN-002).
 settlement = client.settlements.execute_settlement(txn.transaction_id)
 ```
+
+See [`examples/14_marketplace_journey.py`](examples/14_marketplace_journey.py) for this same flow
+run in full, including the Payment Intent → deposit → confirmation → self-custody payout signing
+this snippet omits.
 
 ## Real anonymous objects
 
