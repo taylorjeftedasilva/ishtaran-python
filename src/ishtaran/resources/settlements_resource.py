@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from .resource_support import ResourceSupport
 from ..http.types import HttpTransport, get_request, post_request
 from ..idempotency.idempotency_key_generator import resolve_idempotency_key
@@ -19,8 +21,11 @@ class SettlementsResource(ResourceSupport):
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
 
-    def execute_settlement(self, transaction_id: str, idempotency_key: str | None = None) -> ExecuteSettlementResult:
-        body = self._to_json({"idempotencyKey": resolve_idempotency_key(idempotency_key)})
+    def execute_settlement(self, transaction_id: str, amount: Decimal | None = None, idempotency_key: str | None = None) -> ExecuteSettlementResult:
+        """`amount=None` settles the full remaining reserved amount (unchanged default); informed settles exactly that
+        amount (BL-STL-008, activated 2026-08-26) -- callable repeatedly on the same Transaction until the remaining
+        reserved balance reaches zero, each call computing its own Platform Fee on its own gross slice."""
+        body = self._to_json({"idempotencyKey": resolve_idempotency_key(idempotency_key), "amount": amount})
         return self._execute(post_request(f"/v1/transactions/{transaction_id}/settlements", body, True), map_execute_settlement_result)
 
     def list_by_transaction(self, transaction_id: str) -> list[SettlementResponse]:

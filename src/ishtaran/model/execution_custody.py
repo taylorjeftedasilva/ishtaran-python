@@ -70,6 +70,23 @@ def map_allocated_deposit_address_result(raw: Any) -> AllocatedDepositAddressRes
 
 
 @dataclass(frozen=True)
+class RegisterExecutionDestinationResult:
+    """
+    DEC-037, CUSTODY-EXECUTION-MODES.md -- a beneficiary's valid on-chain receiving address for a
+    given AssetNetwork, consumed by SelfCustodySettlementExecutionStrategy when building an
+    execution leg. Deliberately NOT a withdrawal destination -- no whitelist/cooldown policy,
+    first-registration-wins (a second registration for the same account_id+asset_network_id is
+    rejected, never silently overwritten).
+    """
+
+    execution_destination_id: str
+
+
+def map_register_execution_destination_result(raw: Any) -> RegisterExecutionDestinationResult:
+    return RegisterExecutionDestinationResult(execution_destination_id=string_field(raw, "executionDestinationId"))
+
+
+@dataclass(frozen=True)
 class ExecutionLegInput:
     """A leg already computed by the caller (Settlement/Withdrawal, DEC-025) -- never recomputed by the SDK."""
 

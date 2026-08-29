@@ -25,6 +25,7 @@ from .resources.deposits_resource import DepositsResource
 from .resources.environments_resource import EnvironmentsResource
 from .resources.event_types_resource import EventTypesResource
 from .resources.events_resource import EventsResource
+from .resources.execution_destinations_resource import ExecutionDestinationsResource
 from .resources.ledger_resource import LedgerResource
 from .resources.members_resource import MembersResource
 from .resources.organizations_resource import OrganizationsResource
@@ -106,6 +107,8 @@ class IshtaranClient:
         self.wallets = WalletsResource(transport)
         # SPEC-019/020/021, checkpoint 10 -- the SDK signs locally (wallet.signer) and submits it back.
         self.signing_requests = SigningRequestsResource(transport)
+        # DEC-037 -- a beneficiary's registered on-chain receiving address per AssetNetwork, required before a Settlement can execute under SelfCustody.
+        self.execution_destinations = ExecutionDestinationsResource(transport)
 
     @staticmethod
     def create(

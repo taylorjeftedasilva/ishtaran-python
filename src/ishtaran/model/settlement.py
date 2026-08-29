@@ -48,6 +48,10 @@ class SettlementResponse:
     pricing_policy_id: str
     status: EnumValue[int]
     entry_group_id: str | None
+    # DEC-037 -- populated only under SelfCustody, once SelfCustodySettlementExecutionStrategy
+    # creates a real SigningRequest (never under ManagedCustody, never before there's something to
+    # sign). Fetch it via client.signing_requests.get(signing_request_id) to sign locally.
+    signing_request_id: str | None
     split_allocations: list[SettlementSplitAllocationResponse]
     created_at: str
     executed_at: str | None
@@ -68,6 +72,7 @@ def map_settlement_response(raw: Any) -> SettlementResponse:
         pricing_policy_id=string_field(raw, "pricingPolicyId"),
         status=SettlementStatus.from_raw(int(field(raw, "status"))),
         entry_group_id=string_field_or_none(raw, "entryGroupId"),
+        signing_request_id=string_field_or_none(raw, "signingRequestId"),
         split_allocations=array_field(raw, "splitAllocations", _map_split_allocation),
         created_at=string_field(raw, "createdAt"),
         executed_at=string_field_or_none(raw, "executedAt"),
