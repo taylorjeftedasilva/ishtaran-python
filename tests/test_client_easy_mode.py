@@ -77,25 +77,28 @@ def test_wait_for_payment_never_resolving_raises_timeout_error() -> None:
         client.wait_for_payment(transaction_id, payment_intent_id, timeout_seconds=0.02, poll_interval_seconds=0.005)
 
 
-def test_withdraw_composes_create_destination_and_request_never_hides_network_fee() -> None:
+def test_withdraw_composes_create_destination_and_request_never_hides_network_execution_cost() -> None:
 
     destination_id = "d-1111"
     create_dest_body = json.dumps({"withdrawalDestinationId": destination_id})
     request_body = json.dumps({
-        "withdrawalId": "w-1", "organizationId": "org", "accountId": "acc",
+        "withdrawalId": "w-1", "organizationId": "org", "environmentId": "env", "accountId": "acc",
         "withdrawalDestinationId": destination_id, "assetNetworkId": "an", "amount": 50,
-        "estimatedNetworkFee": 0.4, "estimatedRecipientAmount": 49.6, "finalNetworkFee": None,
+        "estimatedNetworkFee": None, "estimatedRecipientAmount": 50, "finalNetworkFee": None,
         "finalRecipientAmount": None, "status": 0, "entryGroupId": None,
-        "technicalReference": None, "createdAt": "2026-08-17T12:00:00Z",
+        "technicalReference": None, "signingRequestId": "sr-1", "networkExecutionCost": 0.4,
+        "networkExecutionCostStatus": 0, "createdAt": "2026-08-17T12:00:00Z",
     })
     fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(201, create_dest_body)).enqueue(FakeHttpTransport.json(201, request_body))
     client = IshtaranClient.for_testing(fake)
 
-    result = client.withdraw("org", "acc", "an", Decimal("50"), "TDestReal")
+    result = client.withdraw("org", "env", "acc", "an", Decimal("50"), "TDestReal")
 
     assert result.withdrawal_id == "w-1"
-    assert result.estimated_network_fee == Decimal("0.4")
-    assert result.estimated_recipient_amount == Decimal("49.6")
+    assert result.estimated_network_fee is None
+    assert result.estimated_recipient_amount == Decimal("50")
+    assert result.network_execution_cost == Decimal("0.4")
+    assert json.loads(fake.received[1].body)["environmentId"] == "env"
     assert fake.request_count == 2
 
 

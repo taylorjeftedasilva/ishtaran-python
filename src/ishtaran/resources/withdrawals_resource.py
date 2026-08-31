@@ -38,10 +38,10 @@ class WithdrawalsResource(ResourceSupport):
         super().__init__(transport)
 
     def quote(
-        self, organization_id: str, account_id: str, withdrawal_destination_id: str, asset_network_id: str, amount: Decimal,
+        self, organization_id: str, environment_id: str, account_id: str, withdrawal_destination_id: str, asset_network_id: str, amount: Decimal,
     ) -> WithdrawalQuoteResponse:
         body = self._to_json({
-            "accountId": account_id, "withdrawalDestinationId": withdrawal_destination_id,
+            "environmentId": environment_id, "accountId": account_id, "withdrawalDestinationId": withdrawal_destination_id,
             "assetNetworkId": asset_network_id, "amount": amount,
         })
         return self._execute(post_request(f"/v1/organizations/{organization_id}/withdrawals/quote", body, True), map_withdrawal_quote_response)
@@ -53,6 +53,7 @@ class WithdrawalsResource(ResourceSupport):
     def request(
         self,
         organization_id: str,
+        environment_id: str,
         account_id: str,
         withdrawal_destination_id: str,
         asset_network_id: str,
@@ -61,7 +62,7 @@ class WithdrawalsResource(ResourceSupport):
     ) -> WithdrawalResponse:
         key = resolve_idempotency_key(idempotency_key)
         body = self._to_json({
-            "accountId": account_id, "withdrawalDestinationId": withdrawal_destination_id,
+            "environmentId": environment_id, "accountId": account_id, "withdrawalDestinationId": withdrawal_destination_id,
             "assetNetworkId": asset_network_id, "amount": amount, "idempotencyKey": key,
         })
         return self._execute(post_request(f"/v1/organizations/{organization_id}/withdrawals", body, True), map_withdrawal_response)

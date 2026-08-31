@@ -1,38 +1,62 @@
 """
-14 -- End-to-end marketplace journey, verified live against the real Sandbox (2026-08-25): a buyer
-pays into a marketplace that holds its own self-custody execution wallet, a seller signs up as
-their own AccountHolder to receive the payout, and the marketplace signs the real payout itself --
-Ishtaran never sees a private key. Closes the full cycle other examples cover individually
-(self-service signup, self-custody signing, Payment Intents, AccountHolder invitations): this one
-connects them into one story, the way a real integrator would use them.
+14 -- End-to-end marketplace journey, re-verified live 2026-08-31 against the Network Execution
+Engine: a buyer pays into a marketplace that holds its own self-custody execution wallet, a seller
+signs up as their own AccountHolder to receive the payout, and the marketplace signs the real
+payout itself -- Ishtaran never sees a private key. Closes the full cycle other examples cover
+individually (self-service signup, self-custody signing, Payment Intents, AccountHolder
+invitations): this one connects them into one story, the way a real integrator would use them.
 
-Two real gaps found and fixed while building this example, not hypothetical:
+Real gaps found and fixed while building/re-validating this example, not hypothetical:
   - accounts.authorize_application requires a Member session -- it always rejects an API Key,
     even though Accounts is otherwise usable with either (see AccountsEndpoints.cs,
     MemberPermissionPolicy.Require).
   - Once a Payment Intent's deposit is confirmed, the Transaction moves itself to RESERVED -- no
     explicit transactions.reserve(...) call is needed (or valid) in this path.
+  - execute_settlement() now builds its OWN SigningRequest automatically (confirmed live
+    2026-08-31) -- an earlier version of this example manually called signing_requests.create()
+    with hand-picked destination addresses right after execute_settlement(), which built a
+    second, unrelated SigningRequest disconnected from the real Settlement. That is now wrong:
+    sign the SigningRequest execute_settlement() itself returns (settlement.signing_request_id).
+  - Under SelfCustody, broadcasting a beneficiary's leg costs real network resources, charged
+    separately from the Platform Fee -- a NetworkCostPayerAccount must be registered once per
+    (organization_id, asset_network_id) before the first real Settlement, or execute_settlement()
+    fails with 422 PAYOUT_BATCH_NETWORK_COST_PAYER_ACCOUNT_NOT_REGISTERED. This example registers
+    the marketplace's own commission Account as the payer -- a real business decision, not a
+    technical afterthought.
+  - Each beneficiary paid under SelfCustody (the seller, and the platform's own commission) needs
+    a registered ExecutionDestination -- the real on-chain address that beneficiary actually
+    receives funds at -- before execute_settlement() can build a leg for them.
+
+Known gap, not fixed here: transactions.create(...) in this SDK has no environment_id parameter
+at all (unlike the TypeScript SDK's equivalent) -- the backend does not hard-reject a Transaction
+created this way, but it is semantically incomplete. Fixing it is out of scope for this example;
+see SDK_CAPABILITY_SPEC.md item 10.
 
 Requires only ISHTARAN_ASSET_NETWORK_ID/ISHTARAN_NETWORK_ID env vars (an Asset Network already
 seeded in the target Sandbox) -- everything else (Organization, Application, Environment, API Key,
-both Accounts) is provisioned by the example itself.
+all three Accounts) is provisioned by the example itself.
 """
 
 import os
 import time
-import uuid
-from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from ishtaran import Environment, IshtaranClient
 from ishtaran.model.enums import DerivationScheme, TransactionStatus
-from ishtaran.model.execution_custody import ExecutionLegInput
 from ishtaran.model.data_plane import ParticipantInput
-from ishtaran.wallet import generate as generate_wallet
+from ishtaran.wallet import derive_tron_address, generate as generate_wallet
 
 asset_network_id = os.environ["ISHTARAN_ASSET_NETWORK_ID"]
 network_id = os.environ["ISHTARAN_NETWORK_ID"]
 t = int(time.time() * 1000)
+
+
+def sandbox_broadcast_attempt_id_from_reference(reference: str) -> str:
+    prefix = "sandbox-broadcast-"
+    if not reference.startswith(prefix):
+        raise ValueError(f"Unexpected broadcastReference format: {reference}")
+    hex_n = reference[len(prefix):]
+    return f"{hex_n[0:8]}-{hex_n[8:12]}-{hex_n[12:16]}-{hex_n[16:20]}-{hex_n[20:32]}"
 
 # 1. Marketplace operator signs up -- one call provisions Organization, a default Application,
 #    its Sandbox Environment, and a first API Key.
@@ -44,11 +68,12 @@ print("[1] signup ok organization_id=", organization_id)
 client = IshtaranClient.create(api_key=signup.api_key_plain_text, environment=Environment.SANDBOX)
 
 # 2. The marketplace's own execution wallet -- generated locally, only the public key ever
-#    reaches Ishtaran. This is the wallet that will sign the real payout in step 9.
-wallet = generate_wallet()
+#    reaches Ishtaran. This is the wallet that will sign the real payout in step 10, and that
+#    allocates the marketplace's own commission address in step 6.
+generated_wallet = generate_wallet()
 registered_wallet = client.wallets.register(
     application_id, network_id, DerivationScheme.TRON_BIP44_HARDENED_ACCOUNT,
-    wallet.wallet.account_extended_public_key, f"marketplace-wallet-{t}",
+    generated_wallet.wallet.account_extended_public_key, f"marketplace-wallet-{t}",
 )
 print("[2] execution wallet registered wallet_id=", registered_wallet.wallet_id)
 
@@ -65,27 +90,44 @@ seller_account_id = seller_client.account_holders.me().account_id
 print("[3] seller AccountHolder claimed, account_id=", seller_account_id)
 
 # 4. Buyer account -- Organization-provisioned, no login of their own (the common case for a
-#    one-off payer).
+#    one-off payer). The marketplace's own commission Account, same shape.
 buyer_account_id = client.accounts.create(organization_id, f"buyer-{t}").account_id
-print("[4] buyer account_id=", buyer_account_id)
+marketplace_revenue_account_id = client.accounts.create(organization_id, f"marketplace-revenue-{t}").account_id
+print("[4] buyer_account_id=", buyer_account_id, "marketplace_revenue_account_id=", marketplace_revenue_account_id)
 
-# 5. Authorize both Accounts for this Application. GOTCHA: this call requires the Member session
-#    (owner), not the API Key client (client) -- see module docstring.
+# 5. Authorize all three Accounts for this Application. GOTCHA: this call requires the Member
+#    session (owner), not the API Key client (client) -- see module docstring.
 owner.accounts.authorize_application(organization_id, seller_account_id, application_id)
 owner.accounts.authorize_application(organization_id, buyer_account_id, application_id)
-print("[5] both accounts authorized for the application")
+owner.accounts.authorize_application(organization_id, marketplace_revenue_account_id, application_id)
+print("[5] all three accounts authorized for the application")
 
-# 6. Transaction + Payment Intent. No Split declared -- with exactly one non-payer Participant,
-#    BR-SPL-004 gives that Participant 100% of the Distributable Amount implicitly (2+ non-payer
-#    Participants would require an explicit Split).
+# 6. Register where each SelfCustody beneficiary actually gets paid, and who pays for network
+#    execution. The seller's destination is their OWN external wallet (a throwaway wallet here
+#    stands in for "whatever wallet the seller really uses" -- Ishtaran never touches its key).
+#    The marketplace's own commission lands on an address of its OWN execution wallet -- and that
+#    same commission Account is the one registered to pay real network cost, out of its own
+#    commission, a real business decision.
+seller_wallet = generate_wallet()
+seller_destination_address = derive_tron_address(seller_wallet.wallet.account_extended_public_key, 0)
+client.execution_destinations.register(organization_id, seller_account_id, asset_network_id, seller_destination_address)
+marketplace_revenue_allocation = client.wallets.allocate_deposit_address(application_id, network_id)
+client.execution_destinations.register(organization_id, marketplace_revenue_account_id, asset_network_id, marketplace_revenue_allocation.address)
+client.network_cost_payer_accounts.register(organization_id, asset_network_id, marketplace_revenue_account_id)
+print("[6] ExecutionDestinations + NetworkCostPayerAccount registered")
+
+# 7. Transaction + Payment Intent. An explicit Split is required here (2 non-payer Participants
+#    -- seller and marketplace -- BR-SPL-004/BR-SPL-003: a single implicit 100% only applies with
+#    exactly one beneficiary).
 payer = ParticipantInput(account_id=buyer_account_id, role="payer", is_payer=True, split_percentage=None)
-seller = ParticipantInput(account_id=seller_account_id, role="seller", is_payer=False, split_percentage=None)
-txn = client.transactions.create(organization_id, application_id, None, asset_network_id, Decimal("1000"), [payer, seller], f"marketplace-txn-{t}")
+seller = ParticipantInput(account_id=seller_account_id, role="seller", is_payer=False, split_percentage=Decimal("90"))
+marketplace = ParticipantInput(account_id=marketplace_revenue_account_id, role="marketplace", is_payer=False, split_percentage=Decimal("10"))
+txn = client.transactions.create(organization_id, application_id, None, asset_network_id, Decimal("1000"), [payer, seller, marketplace], f"marketplace-txn-{t}")
 intent = client.deposits.create_payment_intent(organization_id, txn.transaction_id, asset_network_id, Decimal("1000"))
 full_intent = client.deposits.get_payment_intent(intent.payment_intent_id)
-print("[6] payment_intent_id=", intent.payment_intent_id, "deposit_address=", full_intent.deposit_address)
+print("[7] payment_intent_id=", intent.payment_intent_id, "deposit_address=", full_intent.deposit_address)
 
-# 7. Simulate the buyer's on-chain deposit and its confirmation (Sandbox only). Once confirmed,
+# 8. Simulate the buyer's on-chain deposit and its confirmation (Sandbox only). Once confirmed,
 #    the Transaction moves itself to RESERVED -- no explicit reserve() call.
 observed = client.sandbox.simulate_deposit(environment_id, full_intent.deposit_address, asset_network_id, Decimal("1000"))
 client.sandbox.simulate_confirmation(environment_id, observed.sandbox_observed_address_id, 1, True)
@@ -95,38 +137,55 @@ for _ in range(20):
         break
     time.sleep(1)
     status = client.transactions.get_state(txn.transaction_id).status
-print("[7] deposit confirmed, transaction status=", status.name)
+print("[8] deposit confirmed, transaction status=", status.name)
 
-# 8. Settlement -- calculates the Platform Fee/Distributable split. It does not move funds by
-#    itself; step 9 requests the real payout signature explicitly.
-settlement = client.settlements.execute_settlement(txn.transaction_id)
-print("[8] settlement executed id=", settlement.settlement_id)
+# 9. Settlement -- calculates the Platform Fee/Split AND builds a real SigningRequest itself
+#    (SelfCustody, confirmed live): one ExecutionLeg per beneficiary (seller, marketplace
+#    commission), each addressed via the ExecutionDestination registered in step 6. Nothing is
+#    final yet -- signing_request_id is populated, but no Ledger Entry exists until every leg
+#    confirms (step 10-11).
+executed = client.settlements.execute_settlement(txn.transaction_id)
+settlement = client.settlements.get(executed.settlement_id)
+print("[9] settlement executed id=", settlement.settlement_id, "signing_request_id=", settlement.signing_request_id)
 
-# 9. The marketplace requests a SigningRequest for the real payout (seller's share, platform fee)
-#    against its own execution wallet, and signs each leg's canonical hash LOCALLY -- the private
-#    key is used here and only here, never sent anywhere.
-allocated = client.wallets.allocate_deposit_address(application_id, network_id)
-expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
-legs = [
-    ExecutionLegInput(role="Seller", destination_address="TSellerPayoutAddress0000000001", amount=Decimal("991")),
-    ExecutionLegInput(role="PlatformFee", destination_address="TIshtaranFeeAddress00000000001", amount=Decimal("9")),
-]
-signing_request = client.signing_requests.create(
-    environment_id, registered_wallet.wallet_id, allocated.derivation_reference,
-    f"marketplace-settlement-{t}", asset_network_id, allocated.address, legs, expires_at,
-    f"marketplace-sr-{t}",
-)
-
-for leg in client.signing_requests.get(signing_request.signing_request_id).legs:
+# 10. Sign every leg of THAT SAME SigningRequest, locally, with the marketplace's own execution
+#     wallet -- the private key is used here and only here, never sent anywhere. A Settlement
+#     with nothing to execute on-chain (every allocation Retained, Fee zero) has
+#     signing_request_id=None; this example's Split always produces real legs to sign.
+if settlement.signing_request_id is None:
+    raise RuntimeError("Expected a real SigningRequest for this Settlement")
+signing_request_id = settlement.signing_request_id
+signing_request = client.signing_requests.get(signing_request_id)
+for leg in signing_request.legs:
     hash_bytes = bytes.fromhex(leg.canonical_hash)
-    signature = wallet.signer.sign(allocated.derivation_reference, hash_bytes)
+    signature = generated_wallet.signer.sign(signing_request.derivation_reference, hash_bytes)
     result = client.signing_requests.submit_signed_transaction(
-        signing_request.signing_request_id, leg.execution_leg_id, leg.canonical_hash, signature.hex().upper(),
+        signing_request_id, leg.execution_leg_id, leg.canonical_hash, signature.hex().upper(),
     )
-    # all_legs_verified only flips to True on the LAST leg submitted -- the all-signatures gate
-    # never broadcasts on a partial set of signatures.
-    print(f"[9] leg={leg.role} verified={result.verified} all_legs_verified={result.all_legs_verified}")
+    print(f"[10] leg={leg.role} verified={result.verified} all_legs_verified={result.all_legs_verified}")
 
-# 10. Confirm both legs broadcast -- the cycle is closed.
-for leg in client.signing_requests.get(signing_request.signing_request_id).legs:
-    print(f"[10] leg={leg.role} status={leg.status} broadcast_reference={leg.broadcast_reference}")
+# 11. Simulate each leg's on-chain confirmation (Sandbox only) and wait for the Settlement to
+#     reach Completed -- only then does the Ledger reflect anything (Delivered, never Available,
+#     since both beneficiaries' ExecutionDestinations are external wallets -- see
+#     concepts/self-custody and concepts/transactions-settlements on the docs site).
+for _ in range(20):
+    current = client.signing_requests.get(signing_request_id)
+    all_referenced = all(leg.broadcast_reference for leg in current.legs)
+    if all_referenced:
+        for leg in current.legs:
+            broadcast_attempt_id = sandbox_broadcast_attempt_id_from_reference(leg.broadcast_reference)
+            client.sandbox.simulate_broadcast_confirmation(environment_id, broadcast_attempt_id, 1, True)
+        break
+    time.sleep(0.5)
+
+final_settlement = client.settlements.get(settlement.settlement_id)
+for _ in range(30):
+    if final_settlement.status.name == "COMPLETED":
+        break
+    time.sleep(0.5)
+    final_settlement = client.settlements.get(settlement.settlement_id)
+print("[11] settlement status=", final_settlement.status.name)
+
+seller_payable = client.payout.get_payable_summary(seller_account_id, asset_network_id)
+marketplace_payable = client.payout.get_payable_summary(marketplace_revenue_account_id, asset_network_id)
+print("[11] seller paid=", seller_payable.paid, "marketplace paid=", marketplace_payable.paid)

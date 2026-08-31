@@ -51,7 +51,13 @@ class SettlementResponse:
     # DEC-037 -- populated only under SelfCustody, once SelfCustodySettlementExecutionStrategy
     # creates a real SigningRequest (never under ManagedCustody, never before there's something to
     # sign). Fetch it via client.signing_requests.get(signing_request_id) to sign locally.
+    # Compatibility field -- always the first entry of signing_request_ids (or None); for a
+    # Settlement funded by more than one physical source, prefer signing_request_ids.
     signing_request_id: str | None
+    # SPEC-ADDRESSPOOL-001 (multi-source funding) -- one SigningRequest per physical funding
+    # source frozen for this Settlement; usually a single entry, more than one only when the
+    # underlying Transaction was funded by more than one confirmed deposit address.
+    signing_request_ids: list[str]
     split_allocations: list[SettlementSplitAllocationResponse]
     created_at: str
     executed_at: str | None
@@ -73,6 +79,7 @@ def map_settlement_response(raw: Any) -> SettlementResponse:
         status=SettlementStatus.from_raw(int(field(raw, "status"))),
         entry_group_id=string_field_or_none(raw, "entryGroupId"),
         signing_request_id=string_field_or_none(raw, "signingRequestId"),
+        signing_request_ids=array_field(raw, "signingRequestIds", str),
         split_allocations=array_field(raw, "splitAllocations", _map_split_allocation),
         created_at=string_field(raw, "createdAt"),
         executed_at=string_field_or_none(raw, "executedAt"),

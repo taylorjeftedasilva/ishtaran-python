@@ -5,8 +5,8 @@ from decimal import Decimal
 from typing import Any
 
 from .enum_factory import EnumValue
-from .enums import EntryNature, TransactionStatus, WithdrawalStatus
-from ..util.json_util import array_field, field, money, string_field, string_field_or_none
+from .enums import EntryNature, NetworkExecutionCostStatus, TransactionStatus, WithdrawalStatus
+from ..util.json_util import array_field, field, money, money_or_none, string_field, string_field_or_none
 
 
 @dataclass(frozen=True)
@@ -41,12 +41,23 @@ def map_create_account_result(raw: Any) -> CreateAccountResult:
 
 @dataclass(frozen=True)
 class WithdrawalQuoteResponse:
+    """
+    SPEC-026 Descoberta 7/8 -- `estimated_network_fee` is deprecated and always `None` under
+    SelfCustody (the only reachable path today, DEC-041): the beneficiary always receives the
+    full `requested_amount`, never `amount - fee`. `network_execution_cost` is the new source of
+    truth for network cost (SPEC-NETEXEC-001). `preview quote != execution quote` -- `request()`
+    always re-quotes from zero via `EnsureViableAsync`, never reuses this response as a price
+    guarantee.
+    """
+
     account_id: str
     withdrawal_destination_id: str
     asset_network_id: str
     requested_amount: Decimal
-    estimated_network_fee: Decimal
+    estimated_network_fee: Decimal | None
+    """Deprecated -- vestigial under SelfCustody, always None. Use network_execution_cost."""
     estimated_recipient_amount: Decimal
+    network_execution_cost: Decimal
     expires_at: str
 
 
@@ -56,47 +67,69 @@ def map_withdrawal_quote_response(raw: Any) -> WithdrawalQuoteResponse:
         withdrawal_destination_id=string_field(raw, "withdrawalDestinationId"),
         asset_network_id=string_field(raw, "assetNetworkId"),
         requested_amount=money(field(raw, "requestedAmount")),
-        estimated_network_fee=money(field(raw, "estimatedNetworkFee")),
+        estimated_network_fee=money_or_none(field(raw, "estimatedNetworkFee")),
         estimated_recipient_amount=money(field(raw, "estimatedRecipientAmount")),
+        network_execution_cost=money(field(raw, "networkExecutionCost")),
         expires_at=string_field(raw, "expiresAt"),
     )
 
 
 @dataclass(frozen=True)
 class WithdrawalResponse:
+    """
+    SPEC-026 Descoberta 8 -- same `estimated_network_fee`/`final_network_fee` deprecation as
+    `WithdrawalQuoteResponse`. `signing_request_id` is populated only under SelfCustody, once
+    there's something to sign (same role as `SettlementResponse.signing_request_id`).
+    `network_execution_cost`/`network_execution_cost_status` are the new source of truth for
+    network cost, via `NetworkExecutionCostSettlementService` (SPEC-NETEXEC-002); both `None`
+    before a network cost has been reserved yet.
+    """
+
     withdrawal_id: str
     organization_id: str
+    environment_id: str
     account_id: str
     withdrawal_destination_id: str
     asset_network_id: str
     amount: Decimal
-    estimated_network_fee: Decimal
+    estimated_network_fee: Decimal | None
+    """Deprecated -- vestigial under SelfCustody, always None. Use network_execution_cost."""
     estimated_recipient_amount: Decimal
     final_network_fee: Decimal | None
+    """Deprecated -- vestigial under SelfCustody, always None. Use network_execution_cost."""
     final_recipient_amount: Decimal | None
     status: EnumValue[int]
     entry_group_id: str | None
     technical_reference: str | None
+    signing_request_id: str | None
+    network_execution_cost: Decimal | None
+    network_execution_cost_status: EnumValue[int] | None
     created_at: str
 
 
 def map_withdrawal_response(raw: Any) -> WithdrawalResponse:
-    final_fee = field(raw, "finalNetworkFee")
-    final_amount = field(raw, "finalRecipientAmount")
+    network_execution_cost_status_raw = field(raw, "networkExecutionCostStatus")
     return WithdrawalResponse(
         withdrawal_id=string_field(raw, "withdrawalId"),
         organization_id=string_field(raw, "organizationId"),
+        environment_id=string_field(raw, "environmentId"),
         account_id=string_field(raw, "accountId"),
         withdrawal_destination_id=string_field(raw, "withdrawalDestinationId"),
         asset_network_id=string_field(raw, "assetNetworkId"),
         amount=money(field(raw, "amount")),
-        estimated_network_fee=money(field(raw, "estimatedNetworkFee")),
+        estimated_network_fee=money_or_none(field(raw, "estimatedNetworkFee")),
         estimated_recipient_amount=money(field(raw, "estimatedRecipientAmount")),
-        final_network_fee=None if final_fee is None else money(final_fee),
-        final_recipient_amount=None if final_amount is None else money(final_amount),
+        final_network_fee=money_or_none(field(raw, "finalNetworkFee")),
+        final_recipient_amount=money_or_none(field(raw, "finalRecipientAmount")),
         status=WithdrawalStatus.from_raw(int(field(raw, "status"))),
         entry_group_id=string_field_or_none(raw, "entryGroupId"),
         technical_reference=string_field_or_none(raw, "technicalReference"),
+        signing_request_id=string_field_or_none(raw, "signingRequestId"),
+        network_execution_cost=money_or_none(field(raw, "networkExecutionCost")),
+        network_execution_cost_status=(
+            None if network_execution_cost_status_raw is None
+            else NetworkExecutionCostStatus.from_raw(int(network_execution_cost_status_raw))
+        ),
         created_at=string_field(raw, "createdAt"),
     )
 

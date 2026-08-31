@@ -40,6 +40,15 @@ class ResourceSupport:
             raise ValueError("Expected response as a list, received a different format")
         return [mapper(item) for item in raw]
 
+    def _execute_optional(self, request: IshtaranHttpRequest, mapper: Callable[[Any], T]) -> T | None:
+        """Like _execute, but a 204/empty body (a legitimate no-op, e.g. "no eligible candidates") maps to None instead of throwing."""
+        response = self._transport.send(request)
+        if response.status >= 400:
+            raise map_error(response)
+        if response.status == 204 or not response.body or not response.body.strip():
+            return None
+        return mapper(parse_lossless(response.body))
+
     def _execute_no_content(self, request: IshtaranHttpRequest) -> None:
         response = self._transport.send(request)
         if response.status >= 400:

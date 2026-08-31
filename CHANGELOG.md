@@ -3,6 +3,58 @@
 Follows [SemVer](https://semver.org/). This is a **Development Preview** — 0.x versions may
 still change before a stable 1.0.0.
 
+## [0.1.3] — 2026-08-31
+
+- Added the Network Execution Engine and Payout surfaces (`SPEC-NETEXEC-001/002`, `SPEC-024/025`),
+  found and validated live against the real Sandbox while rewriting the full marketplace journey
+  example (`examples/14_marketplace_journey.py`):
+  - `client.network_execution.quote(...)` — a fresh, per-broadcast quote of the real network
+    resources (e.g. TRON Energy/Bandwidth) an execution will consume, always independent of the
+    Platform Fee.
+  - `client.execution_sources.register(...)` — registers the wallet/address that actually pays
+    for a batched `PayoutBatch`'s own broadcast (distinct from `NetworkCostPayerAccount` below —
+    needed for `Withdrawal` execution and `PayoutBatch` creation, never for a Settlement's
+    Immediate path).
+  - `client.network_cost_payer_accounts.register(organization_id, asset_network_id, account_id)`
+    — registers which of the Organization's own Accounts is debited for the real network
+    execution cost of every SelfCustody Settlement/Withdrawal/PayoutBatch on a given AssetNetwork.
+    **Required before the first real Settlement with anything to pay out** — without it,
+    `execute_settlement()` fails with 422 `PAYOUT_BATCH_NETWORK_COST_PAYER_ACCOUNT_NOT_REGISTERED`,
+    before it builds any `SigningRequest`.
+  - `client.payout.get_payable_summary(account_id, asset_network_id)` — reads a beneficiary's
+    `accrued`/`reserved_for_payout`/`paid` amounts. Under SelfCustody with an external-wallet
+    `ExecutionDestination`, a beneficiary's `available` Ledger balance legitimately stays `0`
+    forever — `paid` (`Delivered`) is the real "have they been paid" signal.
+  - `client.payout.create_batch(...)`/`get_batch(...)` — this SDK slice only ever creates batches
+    with `trigger = MANUAL`; `THRESHOLD_CROSSED`/`SCHEDULED` exist in the domain model but have no
+    public route to trigger them yet.
+  - `SettlementResponse.signing_request_ids` (plural, `SPEC-ADDRESSPOOL-001`) — one entry per
+    physical funding source frozen for a Settlement; `signing_request_id` remains a compatibility
+    field, always the first entry.
+  - `WithdrawalResponse`/`WithdrawalQuoteResponse` gained `environment_id`, `signing_request_id`,
+    `network_execution_cost`, `network_execution_cost_status`. `estimated_network_fee`/
+    `final_network_fee` are now deprecated and nullable — always `None` under SelfCustody;
+    `network_execution_cost` is the real source of truth.
+  All additive, no breaking change from these alone.
+- **Breaking (real bug fix, not a redesign):** `withdrawals_resource.quote(...)`/`.request(...)`
+  now take `environment_id` as an inserted positional parameter
+  (`organization_id, environment_id, account_id, withdrawal_destination_id, asset_network_id,
+  amount, idempotency_key=None`). The backend has required `EnvironmentId`
+  (`RequestWithdrawalRequest.cs`/`WithdrawalQuoteRequest.cs`) since a prior session's SelfCustody
+  migration (commit `408ac5e`) — this SDK never sent it. Every real `withdrawals.request()` call
+  through this SDK would have failed with 400 `VALIDATION_ERROR` before this fix; confirmed live
+  against a real backend, not just inferred. Any caller must add the new argument.
+- Rewrote `examples/14_marketplace_journey.py`: `execute_settlement()` now builds its own
+  `SigningRequest` automatically (confirmed live) — the previous version manually called
+  `signing_requests.create()` with hand-picked addresses right after `execute_settlement()`, which
+  built a second, disconnected `SigningRequest`. The example now registers a
+  `NetworkCostPayerAccount` and per-beneficiary `ExecutionDestination`s, uses a real 2-beneficiary
+  explicit Split, and signs the real `settlement.signing_request_id`.
+- Note for cross-SDK parity: unlike the TypeScript SDK, `transactions.create(...)`/
+  `receive_payment(...)` in this SDK still have no `environment_id` parameter at all — a known,
+  tracked gap, not fixed in this release (the backend doesn't hard-reject its absence here, unlike
+  for Withdrawals above). See `SDK_CAPABILITY_SPEC.md` item 10.
+
 ## [0.1.2] — 2026-08-29
 
 - Added `client.execution_destinations.register(organization_id, account_id, asset_network_id,

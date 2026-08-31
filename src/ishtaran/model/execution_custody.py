@@ -5,8 +5,8 @@ from decimal import Decimal
 from typing import Any
 
 from .enum_factory import EnumValue
-from .enums import DerivationScheme
-from ..util.json_util import array_field, field, money, safe_int, string_field, string_field_or_none
+from .enums import DerivationScheme, NetworkCostPayer, NetworkResourceSource
+from ..util.json_util import array_field, field, money, money_or_none, safe_int, string_field, string_field_or_none
 
 
 @dataclass(frozen=True)
@@ -192,4 +192,166 @@ def map_submit_signed_transaction_result(raw: Any) -> SubmitSignedTransactionRes
         verified=bool(field(raw, "verified")),
         mismatch_reason=string_field_or_none(raw, "mismatchReason"),
         all_legs_verified=bool(field(raw, "allLegsVerified")),
+    )
+
+
+@dataclass(frozen=True)
+class RegisterExecutionSourceResult:
+    """
+    SPEC-ADDRESSPOOL-001, CUSTODY-EXECUTION-MODES.md -- the outbound-only counterpart of a Wallet
+    derivation: the address ExecutionCustody signs FROM to pay network cost (Energy/Bandwidth/gas),
+    never confused with an ExecutionDestination (a beneficiary's inbound address). Must be
+    registered before the first self-custody Withdrawal/Payout on a given AssetNetwork -- see
+    docs/specs/execution-custody/README.md "Bootstrap obrigatório" for the required order
+    (Wallet -> ExecutionSource -> NetworkCostPayerAccount).
+    """
+
+    execution_source_id: str
+
+
+def map_register_execution_source_result(raw: Any) -> RegisterExecutionSourceResult:
+    return RegisterExecutionSourceResult(execution_source_id=string_field(raw, "executionSourceId"))
+
+
+@dataclass(frozen=True)
+class RegisterNetworkCostPayerAccountResult:
+    """
+    SPEC-NETEXEC-001 -- the Account debited for the *charged* network cost (total_charged, in
+    quote_currency) once a NetworkExecutionQuote is authorized. First-registration-wins per
+    (organization_id, asset_network_id), same as ExecutionDestination -- never silently
+    overwritten. Must belong to the same Organization as the caller (a cross-tenant account_id is
+    rejected).
+    """
+
+    network_cost_payer_account_id: str
+
+
+def map_register_network_cost_payer_account_result(raw: Any) -> RegisterNetworkCostPayerAccountResult:
+    return RegisterNetworkCostPayerAccountResult(network_cost_payer_account_id=string_field(raw, "networkCostPayerAccountId"))
+
+
+@dataclass(frozen=True)
+class NetworkExecutionOperationInput:
+    """A single physical operation to be priced -- input to NetworkExecutionResource.quote(), never interpreted by the caller."""
+
+    destination_address: str | None
+    amount: Decimal
+    kind: EnumValue[int]
+    reference: str | None
+
+
+@dataclass(frozen=True)
+class NetworkExecutionTransferResponse:
+    """SPEC-NETEXEC-001 Descoberta 2 -- the physical unit (what will be one real on-chain transaction), grouping 1..N transfers."""
+
+    destination_address: str
+    amount: Decimal
+    source_operation_reference: str | None
+
+
+def _map_network_execution_transfer_response(raw: Any) -> NetworkExecutionTransferResponse:
+    return NetworkExecutionTransferResponse(
+        destination_address=string_field(raw, "destinationAddress"),
+        amount=money(field(raw, "amount")),
+        source_operation_reference=string_field_or_none(raw, "sourceOperationReference"),
+    )
+
+
+@dataclass(frozen=True)
+class NetworkExecutionTransactionResponse:
+    transfers: list[NetworkExecutionTransferResponse]
+
+
+def _map_network_execution_transaction_response(raw: Any) -> NetworkExecutionTransactionResponse:
+    return NetworkExecutionTransactionResponse(transfers=array_field(raw, "transfers", _map_network_execution_transfer_response))
+
+
+@dataclass(frozen=True)
+class NetworkExecutionPlanResponse:
+    """SPEC-NETEXEC-001 BL-NET-002 -- structured result of INetworkExecutionPlanner.Plan(...), never flattened into loose fields."""
+
+    asset_network_id: str
+    transactions: list[NetworkExecutionTransactionResponse]
+
+
+def _map_network_execution_plan_response(raw: Any) -> NetworkExecutionPlanResponse:
+    return NetworkExecutionPlanResponse(
+        asset_network_id=string_field(raw, "assetNetworkId"),
+        transactions=array_field(raw, "transactions", _map_network_execution_transaction_response),
+    )
+
+
+@dataclass(frozen=True)
+class NetworkResourceLineResponse:
+    """SPEC-NETEXEC-001 Descoberta 6/BR-NET-008 -- resource_code is opaque (string), never interpreted by the generic caller."""
+
+    resource_code: str
+    quantity: Decimal
+    unit: str | None
+
+
+def _map_network_resource_line_response(raw: Any) -> NetworkResourceLineResponse:
+    return NetworkResourceLineResponse(
+        resource_code=string_field(raw, "resourceCode"),
+        quantity=money(field(raw, "quantity")),
+        unit=string_field_or_none(raw, "unit"),
+    )
+
+
+@dataclass(frozen=True)
+class NetworkResourceEstimateResponse:
+    lines: list[NetworkResourceLineResponse]
+
+
+def _map_network_resource_estimate_response(raw: Any) -> NetworkResourceEstimateResponse:
+    return NetworkResourceEstimateResponse(lines=array_field(raw, "lines", _map_network_resource_line_response))
+
+
+@dataclass(frozen=True)
+class NetworkExecutionQuoteResponse:
+    """
+    SPEC-NETEXEC-001 (brief section 13) -- mirror of
+    ExecutionCustody.Domain.ValueObjects.NetworkExecutionQuote. native_execution_cost/
+    authorized_native_cost are always in the RESOURCE asset's native units
+    (resource_asset_network_id or asset_network_id); total_charged is always in quote_currency
+    (the CHARGED asset) -- total_charged = (native_execution_cost * fx) + safety_buffer +
+    replenishment_requirement + conversion_overhead. authorized_native_cost is the number
+    actually reserved for execution (>= the sum of every physical operation's cost, INC-18) --
+    never compare a caller-supplied estimate directly against native_execution_cost alone.
+    """
+
+    network: str | None
+    plan: NetworkExecutionPlanResponse
+    estimated_resources: NetworkResourceEstimateResponse
+    native_execution_cost: Decimal
+    resource_asset_network_id: str | None
+    quote_currency: str | None
+    fx: Decimal
+    safety_buffer: Decimal
+    resource_source: EnumValue[int]
+    replenishment_requirement: Decimal | None
+    conversion_overhead: Decimal
+    expires_at: str
+    total_charged: Decimal
+    network_cost_payer: EnumValue[int]
+    authorized_native_cost: Decimal
+
+
+def map_network_execution_quote_response(raw: Any) -> NetworkExecutionQuoteResponse:
+    return NetworkExecutionQuoteResponse(
+        network=string_field_or_none(raw, "network"),
+        plan=_map_network_execution_plan_response(field(raw, "plan")),
+        estimated_resources=_map_network_resource_estimate_response(field(raw, "estimatedResources")),
+        native_execution_cost=money(field(raw, "nativeExecutionCost")),
+        resource_asset_network_id=string_field_or_none(raw, "resourceAssetNetworkId"),
+        quote_currency=string_field_or_none(raw, "quoteCurrency"),
+        fx=money(field(raw, "fx")),
+        safety_buffer=money(field(raw, "safetyBuffer")),
+        resource_source=NetworkResourceSource.from_raw(safe_int(field(raw, "resourceSource"))),
+        replenishment_requirement=money_or_none(field(raw, "replenishmentRequirement")),
+        conversion_overhead=money(field(raw, "conversionOverhead")),
+        expires_at=string_field(raw, "expiresAt"),
+        total_charged=money(field(raw, "totalCharged")),
+        network_cost_payer=NetworkCostPayer.from_raw(safe_int(field(raw, "networkCostPayer"))),
+        authorized_native_cost=money(field(raw, "authorizedNativeCost")),
     )

@@ -26,9 +26,13 @@ from .resources.environments_resource import EnvironmentsResource
 from .resources.event_types_resource import EventTypesResource
 from .resources.events_resource import EventsResource
 from .resources.execution_destinations_resource import ExecutionDestinationsResource
+from .resources.execution_sources_resource import ExecutionSourcesResource
 from .resources.ledger_resource import LedgerResource
 from .resources.members_resource import MembersResource
+from .resources.network_cost_payer_accounts_resource import NetworkCostPayerAccountsResource
+from .resources.network_execution_resource import NetworkExecutionResource
 from .resources.organizations_resource import OrganizationsResource
+from .resources.payout_resource import PayoutResource
 from .resources.refunds_resource import RefundsResource
 from .resources.sandbox_resource import SandboxResource
 from .resources.settlements_resource import SettlementsResource
@@ -47,8 +51,10 @@ from .webhook.webhook_signature_verifier import verify_webhook_signature
 class EasyWithdrawResult:
     withdrawal_id: str
     requested_amount: Decimal
-    estimated_network_fee: Decimal
+    estimated_network_fee: Decimal | None
+    """Deprecated -- vestigial under SelfCustody, always None. Use network_execution_cost."""
     estimated_recipient_amount: Decimal
+    network_execution_cost: Decimal | None
     status: EnumValue[int]
 
 
@@ -109,6 +115,10 @@ class IshtaranClient:
         self.signing_requests = SigningRequestsResource(transport)
         # DEC-037 -- a beneficiary's registered on-chain receiving address per AssetNetwork, required before a Settlement can execute under SelfCustody.
         self.execution_destinations = ExecutionDestinationsResource(transport)
+        self.execution_sources = ExecutionSourcesResource(transport)
+        self.network_cost_payer_accounts = NetworkCostPayerAccountsResource(transport)
+        self.network_execution = NetworkExecutionResource(transport)
+        self.payout = PayoutResource(transport)
 
     @staticmethod
     def create(
@@ -148,6 +158,7 @@ class IshtaranClient:
     def withdraw(
         self,
         organization_id: str,
+        environment_id: str,
         account_id: str,
         asset_network_id: str,
         amount: Decimal,
@@ -159,12 +170,13 @@ class IshtaranClient:
         if not destination_id:
             destination = self.withdrawals.create_destination(organization_id, destination_address, asset_network_id)
             destination_id = destination.withdrawal_destination_id
-        result = self.withdrawals.request(organization_id, account_id, destination_id, asset_network_id, amount)
+        result = self.withdrawals.request(organization_id, environment_id, account_id, destination_id, asset_network_id, amount)
         return EasyWithdrawResult(
             withdrawal_id=result.withdrawal_id,
             requested_amount=result.amount,
             estimated_network_fee=result.estimated_network_fee,
             estimated_recipient_amount=result.estimated_recipient_amount,
+            network_execution_cost=result.network_execution_cost,
             status=result.status,
         )
 

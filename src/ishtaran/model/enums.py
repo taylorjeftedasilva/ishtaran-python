@@ -52,6 +52,32 @@ DerivationScheme = create_enum({"TRON_BIP44_HARDENED_ACCOUNT": 1})
 # field as a plain `str` (see model/control_plane.py, model/data_plane.py,
 # model/execution_custody.py) with no mirroring enum symbol, so there is no wire-value gap here.
 MemberRoleRequest = create_enum({"OWNER": 1, "ADMIN": 2, "FINANCE": 3, "READ_ONLY": 4})
+# Withdrawals.Contracts.Enums.NetworkExecutionCostStatus (SPEC-026 Descoberta 8) -- derived from
+# Withdrawal.Status, never its own persisted state.
+NetworkExecutionCostStatus = create_enum({"RESERVED": 0, "SETTLED": 1, "RELEASED": 2, "REQUIRES_RECONCILIATION": 3})
+# ExecutionCustody.Contracts.Enums.NetworkCostPayer (SPEC-NETEXEC-001) -- who is charged for the quoted network cost.
+NetworkCostPayer = create_enum({"INTEGRATOR": 0, "REQUESTER": 1})
+# ExecutionCustody.Contracts.Enums.NetworkResourceSource (SPEC-TRON-RESOURCE-001) -- where the
+# physical network resource (e.g. TRON Energy/Bandwidth) came from.
+NetworkResourceSource = create_enum({
+    "NOT_EVALUATED": 0, "SELF": 1, "ISHTARAN_SPONSORED": 2, "PEER": 3, "EXTERNAL": 4,
+})
+# ExecutionCustody.Contracts.Enums.NetworkOperationKind (SPEC-NETEXEC-001) -- the kind of physical
+# on-chain operation a NetworkExecutionQuote is priced for.
+NetworkOperationKind = create_enum({
+    "TRANSFER": 0, "SWAP": 1, "STAKE": 2, "UNSTAKE": 3, "DELEGATE": 4, "UNDELEGATE": 5,
+})
+# Payout.Contracts.Enums.PayoutBatchTrigger (SPEC-025) -- this SDK slice only ever sends MANUAL
+# (CreatePayoutBatchCommand accepts no other trigger via the public route yet).
+PayoutBatchTrigger = create_enum({"THRESHOLD_CROSSED": 0, "SCHEDULED": 1, "MANUAL": 2})
+# Payout.Contracts.Enums.PayoutBatchStatus (SPEC-025).
+PayoutBatchStatus = create_enum({
+    "CREATED": 0, "RESERVED": 1, "EXECUTING": 2, "COMPLETED": 3, "PARTIALLY_FAILED": 4, "FAILED": 5,
+})
+# Payout.Contracts.Enums.PayoutBatchObligationStatus (SPEC-025).
+PayoutBatchObligationStatus = create_enum({
+    "INCLUDED": 0, "CONFIRMED": 1, "FAILED": 2, "REQUIRES_RECONCILIATION": 3,
+})
 
 # ---- Group A (string) ----
 AccountStatus = create_enum({"ACTIVE": "Active", "FROZEN": "Frozen", "CLOSED": "Closed"})
