@@ -126,8 +126,8 @@ This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and
 pip install ishtaran
 ```
 
-`0.1.0` is a real, published **Development Preview** release on PyPI -- verified live with a
-real `pip install` from a clean environment. See [CHANGELOG.md](CHANGELOG.md) for what's in it.
+`0.1.3` is a real, published **Development Preview** release on PyPI -- verified live with a
+real `pip install` from a clean environment (2026-08-31). See [CHANGELOG.md](CHANGELOG.md) for what's in it.
 
 Or for local development:
 
@@ -224,7 +224,7 @@ real API parity) remains a documented future extension, not a hidden limitation.
 
 ## Package distribution roadmap
 
-`0.1.0` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
+`0.1.3` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
 releases follow the same path: a reviewed, tested commit gets a new semver tag, and PyPI
 Trusted Publishing (OIDC, no long-lived token) publishes it automatically.
 
