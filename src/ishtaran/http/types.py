@@ -34,6 +34,11 @@ def post_request(path: str, body: str | None, idempotent: bool) -> IshtaranHttpR
     return IshtaranHttpRequest(method="POST", path=path, body=body, idempotent=idempotent)
 
 
+def patch_request(path: str, body: str | None) -> IshtaranHttpRequest:
+    """PATCH is always idempotent by construction here -- every caller sends the full desired state, never a delta."""
+    return IshtaranHttpRequest(method="PATCH", path=path, body=body, idempotent=True)
+
+
 def delete_request(path: str) -> IshtaranHttpRequest:
     return IshtaranHttpRequest(method="DELETE", path=path, idempotent=False)
 

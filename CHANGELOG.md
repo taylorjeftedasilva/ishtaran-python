@@ -3,6 +3,21 @@
 Follows [SemVer](https://semver.org/). This is a **Development Preview** — 0.x versions may
 still change before a stable 1.0.0.
 
+## [Unreleased]
+
+- F.18 (Network Execution Engine, CUSTOMER_RESOURCES/ISHTARAN_RESOURCES product model) — additive,
+  non-breaking:
+  - `NetworkExecutionQuoteResponse.margin` — the Ishtaran markup applied in ISHTARAN_RESOURCES
+    mode (always `0` in CUSTOMER_RESOURCES mode). New trailing field, existing code unaffected.
+  - `client.network_cost_payer_accounts.update_resource_preference(organization_id, asset_network_id, resource_preference, allow_fallback_to_ishtaran_resources)`
+    — switches an Organization's Network Execution mode for an AssetNetwork between `SELF`
+    (CUSTOMER_RESOURCES) and `ISHTARAN_SPONSORED` (the default), and controls whether an
+    insufficient CUSTOMER_RESOURCES balance falls back to ISHTARAN_RESOURCES instead of failing
+    closed. Requires a `NetworkCostPayerAccount` already registered for the pair.
+  - `client.execution_sources.sync_resource_stake(organization_id, execution_source_id, available_native_amount, available_energy, available_bandwidth)`
+    — self-reported declaration of the on-chain resource capacity available to an
+    ExecutionSource's Wallet, required before CUSTOMER_RESOURCES mode can succeed for it.
+
 ## [0.1.3] — 2026-08-31
 
 - Added the Network Execution Engine and Payout surfaces (`SPEC-NETEXEC-001/002`, `SPEC-024/025`),

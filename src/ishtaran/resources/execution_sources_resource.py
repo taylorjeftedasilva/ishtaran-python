@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from .resource_support import ResourceSupport
 from ..http.types import HttpTransport, post_request
 from ..model.execution_custody import RegisterExecutionSourceResult, map_register_execution_source_result
@@ -33,4 +35,28 @@ class ExecutionSourcesResource(ResourceSupport):
         return self._execute(
             post_request(f"/v1/organizations/{organization_id}/execution-sources", body, False),
             map_register_execution_source_result,
+        )
+
+    def sync_resource_stake(
+        self,
+        organization_id: str,
+        execution_source_id: str,
+        available_native_amount: Decimal,
+        available_energy: Decimal,
+        available_bandwidth: Decimal,
+    ) -> None:
+        """
+        F.18 -- self-reported (no on-chain verification in this version) declaration of the
+        on-chain resource capacity available to the Wallet backing this ExecutionSource. Required
+        before CUSTOMER_RESOURCES (SELF) mode can ever succeed for it -- the platform checks this
+        declared stake for sufficiency at quote time. Safe to call again any time to re-sync (no
+        first-registration-wins restriction, unlike register()).
+        """
+        body = self._to_json({
+            "availableNativeAmount": available_native_amount,
+            "availableEnergy": available_energy,
+            "availableBandwidth": available_bandwidth,
+        })
+        self._execute_no_content(
+            post_request(f"/v1/organizations/{organization_id}/execution-sources/{execution_source_id}/resource-stake", body, False),
         )

@@ -116,6 +116,9 @@ same flow as above.
 - Webhooks
 - Self-custody: wallet generation/restore, public address derivation, `SigningRequest`
   validation, local signing, signed transaction submission, execution destination registration
+- Network Execution Engine: cost quoting, execution source registration/resource-stake sync,
+  network cost payer account registration and `CUSTOMER_RESOURCES`/`ISHTARAN_RESOURCES`
+  preference — see [CORE_API.md § Network Execution Engine](CORE_API.md#network-execution-engine-executioncustody)
 
 This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and the
 [API Reference](https://ishtaran.com/docs/api/ishtaran-api) for details.

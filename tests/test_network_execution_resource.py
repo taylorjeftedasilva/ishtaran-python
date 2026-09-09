@@ -30,6 +30,7 @@ def test_quote_posts_operations_and_maps_the_full_structured_plan_inc18_scaling_
         "totalCharged": 3.16456,
         "networkCostPayer": 0,
         "authorizedNativeCost": 6.3,
+        "margin": 0.15,
     })
     fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(200, body))
     resource = NetworkExecutionResource(fake)
@@ -51,6 +52,7 @@ def test_quote_posts_operations_and_maps_the_full_structured_plan_inc18_scaling_
     assert len(quote.plan.transactions) == 2
     assert quote.total_charged == Decimal("3.16456")
     assert quote.authorized_native_cost == Decimal("6.3")
+    assert quote.margin == Decimal("0.15")
     assert quote.resource_source.name == "SELF"
     assert quote.network_cost_payer.name == "INTEGRATOR"
     assert [line.resource_code for line in quote.estimated_resources.lines] == ["ENERGY", "BANDWIDTH"]
@@ -62,7 +64,7 @@ def test_quote_accepts_none_operations_a_size_only_estimate() -> None:
         "estimatedResources": {"lines": []}, "nativeExecutionCost": 0, "resourceAssetNetworkId": None,
         "quoteCurrency": None, "fx": 1, "safetyBuffer": 0, "resourceSource": 0, "replenishmentRequirement": None,
         "conversionOverhead": 0, "expiresAt": "2026-08-31T12:00:00Z", "totalCharged": 0, "networkCostPayer": 1,
-        "authorizedNativeCost": 0,
+        "authorizedNativeCost": 0, "margin": 0,
     })
     fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(200, body))
     resource = NetworkExecutionResource(fake)

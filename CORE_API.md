@@ -35,6 +35,37 @@ fast, before any signing/broadcast, if a participant has none registered. Covere
 worked example in [README.md § Self-custody](README.md#self-custody) rather than duplicated here —
 the interesting part of this module is the local signing flow, not the HTTP resource shape.
 
+## Network Execution Engine (`ExecutionCustody`)
+
+`client.network_execution.quote(environment_id, asset_network_id, operations, network_cost_payer)`
+prices a plan of 1..N physical on-chain operations (`SPEC-NETEXEC-001`). It is a **preview only** —
+it never writes anything, and Settlement/Withdrawal/Payout each get/re-get their own quote
+internally at execution time (`preview quote != execution quote`, never reuse this response as a
+price guarantee). The response's `total_charged` (in `quote_currency`) is what gets debited;
+`native_execution_cost`/`authorized_native_cost` are always in the resource asset's native units;
+`margin` is the Ishtaran markup applied in `ISHTARAN_RESOURCES` mode (always `"0"` in
+`CUSTOMER_RESOURCES` mode).
+
+Two registrations gate which mode an Organization actually runs in for a given `AssetNetwork`:
+
+- `client.execution_sources.register(...)` registers the address `ExecutionCustody` signs FROM to
+  pay network cost; `client.execution_sources.sync_resource_stake(organization_id,
+  execution_source_id, available_native_amount, available_energy, available_bandwidth)` is the
+  self-reported (no on-chain verification in this version) declaration of that address's
+  available on-chain resource capacity — required before `CUSTOMER_RESOURCES` (`SELF`) mode can
+  ever succeed for it, and safe to call again any time to re-sync (no first-registration-wins
+  restriction, unlike `register`).
+- `client.network_cost_payer_accounts.register(organization_id, asset_network_id, account_id)`
+  registers the Account debited for the *charged* cost (first-registration-wins per
+  `(organization_id, asset_network_id)`); `client.network_cost_payer_accounts.update_resource_preference(
+  organization_id, asset_network_id, resource_preference, allow_fallback_to_ishtaran_resources)`
+  switches that Organization's Network Execution mode for the `AssetNetwork` between `SELF`
+  (`CUSTOMER_RESOURCES`, the integrator's own on-chain resources) and `ISHTARAN_SPONSORED` (the
+  default). `allow_fallback_to_ishtaran_resources` only matters when `resource_preference` is
+  `SELF` — it decides whether an insufficient `CUSTOMER_RESOURCES` balance falls back to
+  `ISHTARAN_RESOURCES` instead of failing closed. Requires a `NetworkCostPayerAccount` already
+  registered via `register` first.
+
 ## Example — full flow without Easy Mode
 
 ```python

@@ -318,6 +318,8 @@ class NetworkExecutionQuoteResponse:
     replenishment_requirement + conversion_overhead. authorized_native_cost is the number
     actually reserved for execution (>= the sum of every physical operation's cost, INC-18) --
     never compare a caller-supplied estimate directly against native_execution_cost alone.
+    margin is the Ishtaran markup applied in ISHTARAN_RESOURCES mode (always 0 in
+    CUSTOMER_RESOURCES mode).
     """
 
     network: str | None
@@ -335,6 +337,7 @@ class NetworkExecutionQuoteResponse:
     total_charged: Decimal
     network_cost_payer: EnumValue[int]
     authorized_native_cost: Decimal
+    margin: Decimal
 
 
 def map_network_execution_quote_response(raw: Any) -> NetworkExecutionQuoteResponse:
@@ -354,4 +357,5 @@ def map_network_execution_quote_response(raw: Any) -> NetworkExecutionQuoteRespo
         total_charged=money(field(raw, "totalCharged")),
         network_cost_payer=NetworkCostPayer.from_raw(safe_int(field(raw, "networkCostPayer"))),
         authorized_native_cost=money(field(raw, "authorizedNativeCost")),
+        margin=money(field(raw, "margin")),
     )

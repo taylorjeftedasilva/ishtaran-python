@@ -3,6 +3,7 @@ import json
 import pytest
 
 from ishtaran.error.errors import ConflictError
+from ishtaran.model.enums import NetworkResourceSource
 from ishtaran.resources.network_cost_payer_accounts_resource import NetworkCostPayerAccountsResource
 from .fake_transport import FakeHttpTransport
 
@@ -25,3 +26,15 @@ def test_cross_tenant_account_is_rejected_mapped_to_a_4xx_error_never_a_raw_500(
 
     with pytest.raises(ConflictError):
         resource.register("org-1", "an-1", "someone-elses-account")
+
+
+def test_update_resource_preference_patches_the_resource_preference_and_fallback_flag() -> None:
+    fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(204, ""))
+    resource = NetworkCostPayerAccountsResource(fake)
+
+    resource.update_resource_preference("org-1", "an-1", NetworkResourceSource.SELF, True)  # type: ignore[attr-defined]
+
+    assert fake.received[0].method == "PATCH"
+    assert fake.received[0].path == "/v1/organizations/org-1/network-cost-payer-accounts/an-1/resource-preference"
+    sent_body = json.loads(fake.received[0].body)
+    assert sent_body == {"resourcePreference": 1, "allowFallbackToIshtaranResources": True}
