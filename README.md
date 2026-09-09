@@ -98,9 +98,14 @@ rejected, never silently overwritten.
 destination = client.execution_destinations.register(organization_id, seller_account_id, asset_network_id, seller_address)
 ```
 
-Once a `Settlement` moves to SelfCustody execution, `SettlementResponse.signing_request_id` is
-populated — fetch it with `client.signing_requests.get(signing_request_id)` to sign locally, the
-same flow as above.
+Once a `Settlement` moves to SelfCustody execution, `SettlementResponse.signing_request_ids` is
+populated — a Settlement funded by multiple physical deposit addresses produces one
+`SigningRequest` per source, fetched/signed the same way for each ID. `signing_request_id`
+(singular) is kept as a compatibility field, always just the first entry of
+`signing_request_ids` — prefer the plural field for any Settlement that might have more than one
+funding source. `Withdrawal.signing_request_id` stays singular only — Withdrawals don't support
+multi-source funding today. Fetch a request with `client.signing_requests.get(signing_request_id)`
+to sign locally, the same flow as above.
 
 ## Current capabilities
 
@@ -119,6 +124,8 @@ same flow as above.
 - Network Execution Engine: cost quoting, execution source registration/resource-stake sync,
   network cost payer account registration and `CUSTOMER_RESOURCES`/`ISHTARAN_RESOURCES`
   preference — see [CORE_API.md § Network Execution Engine](CORE_API.md#network-execution-engine-executioncustody)
+- Payout: payable summary (accrued/paid, never the same as on-chain balance), Manual PayoutBatch
+  creation and retrieval — see [CORE_API.md § Payout](CORE_API.md#payout-spec-024spec-025)
 
 This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and the
 [API Reference](https://ishtaran.com/docs/api/ishtaran-api) for details.
