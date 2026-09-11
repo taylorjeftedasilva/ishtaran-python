@@ -5,6 +5,18 @@ still change before a stable 1.0.0.
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-09-11
+
+- **`client.transactions.search_executions`/`search_executions_all`** (new) — discoverability for
+  outstanding/overdue Executions (`GET /v1/organizations/{organization_id}/executions`), closing
+  an operational gap: the safety rule that restricts an Organization's settlement ability on an
+  overdue Execution was correct, but there was previously no way to find which Execution caused
+  it. Scoped by `organization_id`, same authorization model as every other
+  `/v1/organizations/{organization_id}/...` route — never cross-tenant. New `ExecutionStatus` enum
+  and `ExecutionResponse` model. The only real remediation for an
+  `AWAITING_SIGNATURE`/`OVERDUE` Execution is the settlement flow — this platform is
+  non-custodial and has no cancel path for an Execution.
+
 ## [0.1.4] — 2026-09-11
 
 - **Wallet Balance / On-Chain Balance capability** (`client.wallet_balance`) — the wallet's own

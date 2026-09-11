@@ -1,20 +1,26 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Iterator
+from urllib.parse import urlencode
 
 from .resource_support import ResourceSupport
 from ..http.types import HttpTransport, get_request, post_request
 from ..idempotency.idempotency_key_generator import resolve_idempotency_key
 from ..model.data_plane import (
     CreateTransactionResult,
+    ExecutionResponse,
     ParticipantInput,
     TransactionResponse,
     TransactionStateResponse,
     map_create_transaction_result,
+    map_execution_response,
     map_transaction_response,
     map_transaction_state_response,
 )
+from ..model.enum_factory import EnumValue
 from ..model.enums import TransactionStatus
+from ..pagination.page_iterator import paginate
 from ..util.json_util import string_field_or_none
 from ..util.polling import poll_until
 
@@ -74,6 +80,61 @@ class TransactionsResource(ResourceSupport):
 
     def unfreeze(self, transaction_id: str) -> None:
         self._execute_no_content(post_request(f"/v1/transactions/{transaction_id}/unfreeze", None, False))
+
+    def search_executions(
+        self,
+        organization_id: str,
+        status: EnumValue[int] | None = None,
+        transaction_id: str | None = None,
+        settlement_id: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        skip: int | None = None,
+        take: int | None = None,
+    ) -> list[ExecutionResponse]:
+        """
+        PROMPT 5 section 9 (G.7) -- discoverability for outstanding/overdue Executions. The safety
+        rule that makes an Organization settlement-restricted on an overdue Execution stays -- this
+        closes the operational hole of finding which Execution caused it. Scoped by
+        organization_id, same authorization model as every other
+        /v1/organizations/{organization_id}/... route -- never cross-tenant. All string params go
+        through urlencode, never concatenated raw (same discipline as list() above).
+        """
+        params: dict[str, str] = {}
+        if status is not None:
+            params["status"] = str(status.raw_value)
+        if transaction_id is not None:
+            params["transactionId"] = transaction_id
+        if settlement_id is not None:
+            params["settlementId"] = settlement_id
+        if date_from is not None:
+            params["from"] = date_from
+        if date_to is not None:
+            params["to"] = date_to
+        if skip is not None:
+            params["skip"] = str(skip)
+        if take is not None:
+            params["take"] = str(take)
+        suffix = f"?{urlencode(params)}" if params else ""
+        return self._execute_list(get_request(f"/v1/organizations/{organization_id}/executions{suffix}"), map_execution_response)
+
+    def search_executions_all(
+        self,
+        organization_id: str,
+        page_size: int,
+        status: EnumValue[int] | None = None,
+        transaction_id: str | None = None,
+        settlement_id: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> Iterator[ExecutionResponse]:
+        """Lazy iterator -- see SDK_CAPABILITY_SPEC.md section 12.7."""
+        return paginate(
+            page_size,
+            lambda skip, take: self.search_executions(
+                organization_id, status, transaction_id, settlement_id, date_from, date_to, skip, take,
+            ),
+        )
 
     def wait_for(self, transaction_id: str, timeout_seconds: float, poll_interval_seconds: float) -> TransactionResponse:
         """Safe polling, never infinite -- terminates at Settled/Refunded/Cancelled."""

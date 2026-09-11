@@ -26,6 +26,10 @@ WithdrawalStatus = create_enum({
     "REQUESTED": 0, "VALIDATING": 1, "PENDING_APPROVAL": 2, "APPROVED": 3, "REJECTED": 4,
     "BROADCASTING": 5, "BROADCAST_FAILED": 6, "CONFIRMING": 7, "COMPLETED": 8, "CANCELLED": 9,
 })
+# PROMPT 5 section 9 (G.7) -- mirrors Transactions.Contracts.Enums.ExecutionStatus.
+ExecutionStatus = create_enum({
+    "PREPARED": 0, "AWAITING_SIGNATURE": 1, "EXECUTED": 2, "FAILED": 3, "EXPIRED": 4, "OVERDUE": 5,
+})
 SettlementStatus = create_enum({"PENDING": 0, "EXECUTING": 1, "COMPLETED": 2, "FAILED": 3})
 RefundStatus = create_enum({"REQUESTED": 0, "APPROVED": 1, "EXECUTED": 2, "REJECTED": 3})
 SplitAllocationStatus = create_enum({"EXECUTED": 0, "RETAINED": 1, "RELEASED": 2})

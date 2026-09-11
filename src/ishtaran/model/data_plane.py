@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 from .enum_factory import EnumValue
-from .enums import EntryNature, NetworkExecutionCostStatus, TransactionStatus, WithdrawalStatus
+from .enums import EntryNature, ExecutionStatus, NetworkExecutionCostStatus, TransactionStatus, WithdrawalStatus
 from ..util.json_util import array_field, field, money, money_or_none, string_field, string_field_or_none
 
 
@@ -261,6 +261,35 @@ class CreateTransactionResult:
 
 def map_create_transaction_result(raw: Any) -> CreateTransactionResult:
     return CreateTransactionResult(transaction_id=string_field(raw, "transactionId"))
+
+
+@dataclass(frozen=True)
+class ExecutionResponse:
+    """PROMPT 5 section 9 (G.7) -- GET /v1/organizations/{organization_id}/executions.
+    The only real remediation for an AWAITING_SIGNATURE/OVERDUE Execution is
+    transactions.execute_settlement equivalent flow -- non-custodial model, no cancel path."""
+
+    execution_id: str
+    transaction_id: str
+    organization_id: str
+    status: EnumValue[int]
+    prepared_at: str
+    grace_period_expires_at: str
+    executed_at: str | None
+    settlement_id: str | None
+
+
+def map_execution_response(raw: Any) -> ExecutionResponse:
+    return ExecutionResponse(
+        execution_id=string_field(raw, "executionId"),
+        transaction_id=string_field(raw, "transactionId"),
+        organization_id=string_field(raw, "organizationId"),
+        status=ExecutionStatus.from_raw(int(field(raw, "status"))),
+        prepared_at=string_field(raw, "preparedAt"),
+        grace_period_expires_at=string_field(raw, "gracePeriodExpiresAt"),
+        executed_at=string_field_or_none(raw, "executedAt"),
+        settlement_id=string_field_or_none(raw, "settlementId"),
+    )
 
 
 @dataclass(frozen=True)
