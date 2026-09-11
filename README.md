@@ -126,6 +126,11 @@ to sign locally, the same flow as above.
   preference — see [CORE_API.md § Network Execution Engine](CORE_API.md#network-execution-engine-executioncustody)
 - Payout: payable summary (accrued/paid, never the same as on-chain balance), Manual PayoutBatch
   creation and retrieval — see [CORE_API.md § Payout](CORE_API.md#payout-spec-024spec-025)
+- Wallet Balance: `client.wallet_balance` — the wallet's own observed on-chain balance at a
+  registered self-custody address (snapshot read, authoritative refresh with a server-side 30s
+  guard, multi-asset/multi-network aggregate) — a fundamentally different question from
+  `client.ledger`'s economic accounting, never summed or substituted for one another — see
+  [CORE_API.md § Wallet Balance](CORE_API.md#wallet-balance)
 
 This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and the
 [API Reference](https://ishtaran.com/docs/api/ishtaran-api) for details.
@@ -136,8 +141,10 @@ This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and
 pip install ishtaran
 ```
 
-`0.1.3` is a real, published **Development Preview** release on PyPI -- verified live with a
-real `pip install` from a clean environment (2026-08-31). See [CHANGELOG.md](CHANGELOG.md) for what's in it.
+`0.1.4` is a real, published **Development Preview** release on PyPI -- verified live with a
+real `pip install` from a clean environment (2026-09-11). `0.1.4` is also the minimum version if
+your code needs `client.wallet_balance` or reads `payable`/`reserved_for_payout`/`delivered` from
+`client.get_balance`/`client.ledger.get_balance` (G.2). See [CHANGELOG.md](CHANGELOG.md) for what's in it.
 
 Or for local development:
 
@@ -234,7 +241,7 @@ real API parity) remains a documented future extension, not a hidden limitation.
 
 ## Package distribution roadmap
 
-`0.1.3` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
+`0.1.4` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
 releases follow the same path: a reviewed, tested commit gets a new semver tag, and PyPI
 Trusted Publishing (OIDC, no long-lived token) publishes it automatically.
 

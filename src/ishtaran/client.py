@@ -38,6 +38,7 @@ from .resources.sandbox_resource import SandboxResource
 from .resources.settlements_resource import SettlementsResource
 from .resources.transactions_resource import TransactionsResource
 from .resources.signing_requests_resource import SigningRequestsResource
+from .resources.wallet_balance_resource import WalletBalanceResource
 from .resources.wallets_resource import WalletsResource
 from .resources.webhook_deliveries_resource import WebhookDeliveriesResource
 from .resources.webhook_endpoints_resource import WebhookEndpointsResource
@@ -119,6 +120,8 @@ class IshtaranClient:
         self.network_cost_payer_accounts = NetworkCostPayerAccountsResource(transport)
         self.network_execution = NetworkExecutionResource(transport)
         self.payout = PayoutResource(transport)
+        # The wallet's own on-chain balance, never the Ledger (see WalletBalanceResource's own doc).
+        self.wallet_balance = WalletBalanceResource(transport)
 
     @staticmethod
     def create(

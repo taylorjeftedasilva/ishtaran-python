@@ -5,6 +5,29 @@ still change before a stable 1.0.0.
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-09-11
+
+- **Wallet Balance / On-Chain Balance capability** (`client.wallet_balance`) — the wallet's own
+  observed on-chain balance at a registered self-custody address, a fundamentally different
+  question from `client.ledger.get_balance` (Ishtaran's own economic accounting) — never summed,
+  never substituted for one another:
+  - `get_balance(account_id, environment_id, asset_network_id)` — cheap, returns the last known
+    snapshot, never a blockchain/RPC call itself.
+  - `refresh_balance(account_id, environment_id, asset_network_id)` — asks the platform to check
+    authoritatively right now; subject to the platform's own 30s freshness/single-flight guard
+    server-side (check `refresh_suppressed`/`stale` on the result rather than polling blindly —
+    calling it too often is always safe, never an error).
+  - `get_asset_balances(account_id, environment_id, asset_network_ids)` — aggregates balance
+    across the given AssetNetworks, grouped by Asset (e.g. USDT total across TRON + any future
+    network), broken down per-network in the result — never summed across different Assets.
+  - `account_id` is the wallet_id throughout (`ExecutionDestination` already ties one Account to
+    one registered self-custody address per AssetNetwork — no separate wallet-registration
+    concept).
+- **G.2 fixed** — `BalanceResponse` (from `client.ledger.get_balance`/`client.get_balance`) was
+  silently dropping `payable`, `reserved_for_payout`, and `delivered` — present on the real
+  backend record since `SPEC-024/025` (2026-08-30), never parsed by this SDK. All three now
+  present on the returned dataclass. Backward compatible: an older wire response that omits them
+  still parses, defaulting each to `Decimal("0")`, never throwing.
 - F.18 (Network Execution Engine, CUSTOMER_RESOURCES/ISHTARAN_RESOURCES product model) — additive,
   non-breaking:
   - `NetworkExecutionQuoteResponse.margin` — the Ishtaran markup applied in ISHTARAN_RESOURCES

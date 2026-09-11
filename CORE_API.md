@@ -128,6 +128,48 @@ them as available capabilities.
   a single `signing_request_id` (a PayoutBatch's own SelfCustody signing is not multi-source the
   way Settlement's is — see [CORE_API.md § Self-custody](#self-custody-executioncustody)).
 
+## Wallet Balance
+
+**A fundamentally different question from `client.ledger.get_balance`.** Ledger answers "what
+does Ishtaran's own accounting say this Account is owed/holds/has been paid" (Available/Reserved/
+Payable/Delivered — populated exclusively by real Payment/Settlement flows). Wallet Balance
+answers "how many tokens actually sit at this Account's registered self-custody address right
+now" — an observation of chain state (real on-chain in Production, Sandbox-simulated in Sandbox),
+never the platform's own economic bookkeeping. **Never sum the two, never substitute one for the
+other** — an Account can have a large Ledger Payable and `0` wallet balance simultaneously
+(nothing paid out on-chain yet), or a wallet balance the Ledger has no opinion about at all (e.g.
+the wallet's owner moved funds in from outside any Ishtaran-mediated flow).
+
+`account_id` throughout is the wallet_id — `ExecutionDestination` (registered once via
+`client.execution_destinations.register(...)`, see [CORE_API.md § Self-custody](#self-custody-executioncustody))
+already ties one Account to one self-custody address per AssetNetwork, so there is no separate
+wallet-registration concept to learn.
+
+- `client.wallet_balance.get_balance(account_id, environment_id, asset_network_id)` — cheap,
+  returns the platform's last known snapshot (`address`, `balance`, `observed_at`, `stale`,
+  `source`, `refresh_suppressed`, `refresh_failure_reason`, `next_refresh_allowed_at`). Never
+  itself makes a blockchain/RPC call — safe to call on every page load/poll tick. `observed_at`
+  `None` means this wallet has never been successfully observed yet (`balance` is `0` in that
+  case, never a lie).
+- `client.wallet_balance.refresh_balance(account_id, environment_id, asset_network_id)` — asks
+  the platform to check authoritatively, right now. The platform enforces its own ~30s freshness/
+  single-flight guard server-side, so calling this more often than needed is always safe (never an
+  error, never extra provider cost) — check `refresh_suppressed`/`stale` on the result rather than
+  polling blindly to see whether a real check actually happened.
+- `client.wallet_balance.get_asset_balances(account_id, environment_id, asset_network_ids)` —
+  aggregates balance across the given AssetNetworks (candidates you already know about, e.g. from
+  `asset_network_catalog.list_asset_networks`), grouped by Asset (e.g. USDT total across TRON +
+  any future network) with a per-network breakdown in the result. Any AssetNetwork this Account
+  has no registered address for is simply omitted, never an error. **Never summed across
+  different Assets** (USDT is never added to ETH).
+- The platform keeps a wallet's balance fresh on its own — event-driven refresh fires on Deposit/
+  Settlement/Withdrawal/Payout confirmations that touch a known registered address, plus a
+  background reconciliation sweep — a client never has to poll aggressively for correctness. A
+  client MAY independently re-check a real chain itself (Production only — there is no
+  independent chain to read in Sandbox) as a cheap optimization to decide *when* to call
+  `refresh_balance`, but it must never report an observed value back to Ishtaran as if it were
+  authoritative — the platform always re-verifies for itself.
+
 ## Example — full flow without Easy Mode
 
 ```python

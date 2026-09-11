@@ -111,6 +111,29 @@ def test_get_balance_is_direct_pass_through() -> None:
     assert balance.available == Decimal("100")
 
 
+def test_get_balance_parses_payable_reserved_for_payout_delivered_g2() -> None:
+    """G.2 (found 2026-09-11): payable/reservedForPayout/delivered were silently dropped."""
+    body = json.dumps({"available": 0, "pending": 0, "reserved": 0, "payable": 178.38, "reservedForPayout": 19.82, "delivered": 178.38})
+    fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(200, body))
+    client = IshtaranClient.for_testing(fake)
+
+    balance = client.get_balance("acc", "an")
+    assert balance.payable == Decimal("178.38")
+    assert balance.reserved_for_payout == Decimal("19.82")
+    assert balance.delivered == Decimal("178.38")
+
+
+def test_get_balance_defaults_payable_reserved_for_payout_delivered_to_zero_when_omitted() -> None:
+    body = json.dumps({"available": 100, "pending": 0, "reserved": 0})
+    fake = FakeHttpTransport().enqueue(FakeHttpTransport.json(200, body))
+    client = IshtaranClient.for_testing(fake)
+
+    balance = client.get_balance("acc", "an")
+    assert balance.payable == Decimal("0")
+    assert balance.reserved_for_payout == Decimal("0")
+    assert balance.delivered == Decimal("0")
+
+
 def test_verify_webhook_signature_makes_no_http_call() -> None:
     fake = FakeHttpTransport()  # no response queued -- would raise if it were called
     client = IshtaranClient.for_testing(fake)

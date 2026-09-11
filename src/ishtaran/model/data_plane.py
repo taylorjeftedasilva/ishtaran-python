@@ -143,11 +143,27 @@ def map_create_withdrawal_destination_result(raw: Any) -> CreateWithdrawalDestin
     return CreateWithdrawalDestinationResult(withdrawal_destination_id=string_field(raw, "withdrawalDestinationId"))
 
 
+def _money_default_zero(value: Any) -> Decimal:
+    return Decimal("0") if value is None else money(value)
+
+
 @dataclass(frozen=True)
 class BalanceResponse:
+    """G.2 (found 2026-09-11, SDK audit): the real backend record
+    (Ledger.Contracts.Responses.BalanceResponse) has carried payable/reserved_for_payout/delivered
+    since SPEC-024/025 (2026-08-30) -- previously silently dropped here. Payable is what Payout
+    owes a beneficiary but hasn't paid yet (an economic obligation, never an on-chain balance);
+    reserved_for_payout is Payable already claimed by an in-flight PayoutBatch; delivered is the
+    cumulative real payout total -- under SelfCustody this can grow while available stays exactly
+    0, because the money already left the platform's custody entirely (see client.wallet_balance
+    for the wallet's own on-chain state, a different question again)."""
+
     available: Decimal
     pending: Decimal
     reserved: Decimal
+    payable: Decimal
+    reserved_for_payout: Decimal
+    delivered: Decimal
 
 
 def map_balance_response(raw: Any) -> BalanceResponse:
@@ -155,6 +171,10 @@ def map_balance_response(raw: Any) -> BalanceResponse:
         available=money(field(raw, "available")),
         pending=money(field(raw, "pending")),
         reserved=money(field(raw, "reserved")),
+        # Backward compatible: an older wire response that omits these still parses, never throws.
+        payable=_money_default_zero(field(raw, "payable")),
+        reserved_for_payout=_money_default_zero(field(raw, "reservedForPayout")),
+        delivered=_money_default_zero(field(raw, "delivered")),
     )
 
 
