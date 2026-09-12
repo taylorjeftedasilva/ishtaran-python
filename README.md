@@ -141,10 +141,10 @@ This is deliberately not a full reference — see [FEATURES.md](FEATURES.md) and
 pip install ishtaran
 ```
 
-`0.1.4` is a real, published **Development Preview** release on PyPI -- verified live with a
-real `pip install` from a clean environment (2026-09-11). `0.1.4` is also the minimum version if
+`0.1.5` is the current real, published **Development Preview** release on PyPI -- verified live
+with a real `pip install` from a clean environment (2026-09-12). `0.1.4` is the minimum version if
 your code needs `client.wallet_balance` or reads `payable`/`reserved_for_payout`/`delivered` from
-`client.get_balance`/`client.ledger.get_balance` (G.2). See [CHANGELOG.md](CHANGELOG.md) for what's in it.
+`client.get_balance`/`client.ledger.get_balance` (G.2). See [CHANGELOG.md](CHANGELOG.md) for what's in each version.
 
 Or for local development:
 
@@ -241,7 +241,7 @@ real API parity) remains a documented future extension, not a hidden limitation.
 
 ## Package distribution roadmap
 
-`0.1.4` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
+`0.1.5` (Development Preview) is published on PyPI -- see [Installation](#installation). Future
 releases follow the same path: a reviewed, tested commit gets a new semver tag, and PyPI
 Trusted Publishing (OIDC, no long-lived token) publishes it automatically.
 
