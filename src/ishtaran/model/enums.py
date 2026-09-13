@@ -31,6 +31,10 @@ ExecutionStatus = create_enum({
     "PREPARED": 0, "AWAITING_SIGNATURE": 1, "EXECUTED": 2, "FAILED": 3, "EXPIRED": 4, "OVERDUE": 5,
 })
 SettlementStatus = create_enum({"PENDING": 0, "EXECUTING": 1, "COMPLETED": 2, "FAILED": 3})
+# PROMPT 7 (SPEC-TRANSFER-001) -- mirrors Settlement.Contracts.Enums.OperationType.
+OperationType = create_enum({"MARKETPLACE": 0, "PAYMENT": 1, "TRANSFER": 2})
+# PROMPT 7 (SPEC-TRANSFER-001) -- mirrors Transfers.Contracts.Enums.TransferStatus.
+TransferStatus = create_enum({"CREATED": 0, "AWAITING_SIGNATURE": 1, "SUBMITTED": 2, "CONFIRMED": 3, "FAILED": 4})
 RefundStatus = create_enum({"REQUESTED": 0, "APPROVED": 1, "EXECUTED": 2, "REJECTED": 3})
 SplitAllocationStatus = create_enum({"EXECUTED": 0, "RETAINED": 1, "RELEASED": 2})
 SplitRetentionReason = create_enum({

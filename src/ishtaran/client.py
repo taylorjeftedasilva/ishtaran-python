@@ -36,6 +36,7 @@ from .resources.payout_resource import PayoutResource
 from .resources.refunds_resource import RefundsResource
 from .resources.sandbox_resource import SandboxResource
 from .resources.settlements_resource import SettlementsResource
+from .resources.transfers_resource import TransfersResource
 from .resources.transactions_resource import TransactionsResource
 from .resources.signing_requests_resource import SigningRequestsResource
 from .resources.wallet_balance_resource import WalletBalanceResource
@@ -102,6 +103,8 @@ class IshtaranClient:
         self.deposits = DepositsResource(transport)
         self.ledger = LedgerResource(transport)
         self.settlements = SettlementsResource(transport)
+        # PROMPT 7 (SPEC-TRANSFER-001) -- first-class Transfer, never a Payment/PaymentIntent/Settlement in disguise.
+        self.transfers = TransfersResource(transport)
         self.refunds = RefundsResource(transport)
         self.withdrawals = WithdrawalsResource(transport)
         self.workflows = WorkflowsResource(transport)

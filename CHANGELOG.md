@@ -5,9 +5,30 @@ still change before a stable 1.0.0.
 
 ## [Unreleased]
 
+## [0.1.6] — 2026-09-12
+
+- **Added** — `client.transfers` (`TransfersResource.request`/`.get`) — first-class Transfer
+  (PROMPT 7.1, SPEC-TRANSFER-001/002, BR-TRF-008): an Account's own self-custody wallet sends to
+  either an internal Account (`destination_account_id`) or an arbitrary external address
+  (`destination_address`, never requiring pre-registration). The Platform Fee is always `ON_TOP` —
+  the recipient always receives exactly the requested `amount`, the fee is charged separately from
+  the sender (`platform_fee_amount`/`platform_fee_percentage` on the response). `request(...)` ends
+  in `AWAITING_SIGNATURE`, never synchronously `CONFIRMED` — `TransferResponse.signing_request_id`
+  is the real `SigningRequest` to fetch (`signing_requests.get(...)`), sign each Leg's
+  `canonical_hash` locally, and submit back (`signing_requests.submit_signed_transaction(...)`).
+  New `OperationType`/`TransferStatus` enums.
+- **Added** — `wallets.register_for_account(organization_id, account_id, application_id,
+  network_id, scheme, public_derivation_material, idempotency_key=None)` — registers the
+  execution/signing identity OWNED by a specific Account (its own xpub, generated independently
+  client-side — never the same material as the Application's shared `wallets.register`). Required
+  once before that Account can ever be the `source_account_id` of a `transfers.request(...)` call.
+- **Added** — `OperationType` and a new optional `operation_type` keyword argument on
+  `client.settlements.execute_settlement(transaction_id, amount=None, idempotency_key=None,
+  operation_type=None)` — selects which Platform Fee rate applies (default `MARKETPLACE`, 100%
+  backward compatible).
 - **Fixed** — `DEFAULT_USER_AGENT` (`ishtaran-python/<version>`, sent on every request) was frozen
   at `0.1.3` since that release — every subsequent version sent a stale version string, found
-  during a public-knowledge audit. `SDK_VERSION` now correctly reads `0.1.5`.
+  during a public-knowledge audit. `SDK_VERSION` now correctly reads `0.1.6`.
 
 ## [0.1.5] — 2026-09-11
 

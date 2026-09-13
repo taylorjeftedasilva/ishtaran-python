@@ -5,6 +5,7 @@ from decimal import Decimal
 from .resource_support import ResourceSupport
 from ..http.types import HttpTransport, get_request, post_request
 from ..idempotency.idempotency_key_generator import resolve_idempotency_key
+from ..model.enum_factory import EnumValue
 from ..model.settlement import (
     ExecuteSettlementResult,
     SettlementResponse,
@@ -21,11 +22,26 @@ class SettlementsResource(ResourceSupport):
     def __init__(self, transport: HttpTransport) -> None:
         super().__init__(transport)
 
-    def execute_settlement(self, transaction_id: str, amount: Decimal | None = None, idempotency_key: str | None = None) -> ExecuteSettlementResult:
+    def execute_settlement(
+        self,
+        transaction_id: str,
+        amount: Decimal | None = None,
+        idempotency_key: str | None = None,
+        operation_type: EnumValue[int] | None = None,
+    ) -> ExecuteSettlementResult:
         """`amount=None` settles the full remaining reserved amount (unchanged default); informed settles exactly that
         amount (BL-STL-008, activated 2026-08-26) -- callable repeatedly on the same Transaction until the remaining
-        reserved balance reaches zero, each call computing its own Platform Fee on its own gross slice."""
-        body = self._to_json({"idempotencyKey": resolve_idempotency_key(idempotency_key), "amount": amount})
+        reserved balance reaches zero, each call computing its own Platform Fee on its own gross slice.
+
+        PROMPT 7 (SPEC-TRANSFER-001) -- `operation_type` selects which PricingPolicy rate applies
+        (default `OperationType.MARKETPLACE` server-side when omitted, 100% backward compatible --
+        never inferred from the Transaction's own shape). Pass `OperationType.PAYMENT` for a simple
+        2-party payment (0.40%), leave it unset for a marketplace/split settlement (0.90%)."""
+        body = self._to_json({
+            "idempotencyKey": resolve_idempotency_key(idempotency_key),
+            "amount": amount,
+            "operationType": operation_type.raw_value if operation_type is not None else None,
+        })
         return self._execute(post_request(f"/v1/transactions/{transaction_id}/settlements", body, True), map_execute_settlement_result)
 
     def list_by_transaction(self, transaction_id: str) -> list[SettlementResponse]:

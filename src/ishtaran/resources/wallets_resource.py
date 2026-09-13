@@ -37,6 +37,32 @@ class WalletsResource(ResourceSupport):
         })
         return self._execute(post_request(f"/v1/applications/{application_id}/wallets", body, True), map_register_wallet_result)
 
+    def register_for_account(
+        self,
+        organization_id: str,
+        account_id: str,
+        application_id: str,
+        network_id: str,
+        scheme: EnumValue[int],
+        public_derivation_material: str,
+        idempotency_key: str | None = None,
+    ) -> RegisterWalletResult:
+        """BR-TRF-008 -- registers the execution/signing identity OWNED by a specific Account (its
+        own public_derivation_material, generated independently client-side -- never the same
+        material as the Application's shared `register` Wallet). Required before that Account can
+        be the source_account_id of a transfers.request(...) call for this network_id. Index 0 is
+        reserved automatically as this Account's own receiving address (no separate
+        allocate_deposit_address call needed for it)."""
+        key = resolve_idempotency_key(idempotency_key)
+        body = self._to_json({
+            "applicationId": application_id, "networkId": network_id, "scheme": scheme.raw_value,
+            "publicDerivationMaterial": public_derivation_material, "idempotencyKey": key,
+        })
+        return self._execute(
+            post_request(f"/v1/organizations/{organization_id}/accounts/{account_id}/wallets", body, True),
+            map_register_wallet_result,
+        )
+
     def get(self, wallet_id: str) -> WalletResponse:
         """BR-WLT-002 -- never includes public_derivation_material; see get_public_material."""
         return self._execute(get_request(f"/v1/wallets/{wallet_id}"), map_wallet_response)
